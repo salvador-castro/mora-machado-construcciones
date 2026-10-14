@@ -257,9 +257,7 @@ async function main() {
 
   const pendingTodos = todosSchema.parse(
     [
-      "Confirmar cuál teléfono es el principal de WhatsApp (hoy: 03487-656133).",
       "Elegir color de acento: lima (template) o terracota (marca actual).",
-      "Email de contacto público y emails que reciben las notificaciones del formulario.",
       "Fotos adicionales en alta resolución (las actuales son de 1200 px), logos de clientes y testimonios reales.",
       "Revisar textos redactados: intro de inicio, Nosotros, detalle de servicios, blog y política de privacidad.",
       "Confirmar rangos de presupuesto del formulario.",
@@ -274,7 +272,7 @@ async function main() {
       tagline: "Obras civiles · reformas · construcción",
       accentColor: "#E8FD53",
       phones,
-      email: null,
+      email: "info@moramachadoconstrucciones.com",
       address: "Zárate, Buenos Aires, Argentina",
       coverage: "Otras ciudades y provincias a evaluar",
       mapEmbedUrl:
@@ -289,7 +287,7 @@ async function main() {
       defaultSeoDescription:
         "Empresa familiar de Zárate. Construcciones nuevas, reformas, obras civiles, terminaciones exteriores y espacios deportivos.",
       defaultOgImageId: img.pool.id,
-      notificationEmails: [],
+      notificationEmails: ["info@moramachadoconstrucciones.com"],
       budgetRanges: [
         "Todavía no lo sé",
         "Hasta $10 millones",

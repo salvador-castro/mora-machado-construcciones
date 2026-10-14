@@ -2,6 +2,7 @@
 SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
 APP_ROOT=/var/www/mora
+COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
 # 03:15 backup of database + uploads
 15 3 * * * $APP_ROOT/current/deploy/backup.sh >> $APP_ROOT/logs/backup.log 2>&1

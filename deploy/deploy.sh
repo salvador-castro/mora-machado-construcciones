@@ -9,6 +9,8 @@ APP_ROOT="${APP_ROOT:-/var/www/mora}"
 BRANCH="${1:-main}"
 KEEP="${KEEP_RELEASES:-3}"
 PORT="${PORT:-3000}"
+# Corepack would otherwise ask "download pnpm? [Y/n]" and block the script.
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
 log() { printf '\n\033[1m▶ %s\033[0m\n' "$*"; }
 

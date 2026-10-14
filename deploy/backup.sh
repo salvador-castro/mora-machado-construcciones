@@ -19,5 +19,7 @@ find "$DEST" -type f -mtime +"$KEEP_DAYS" -delete
 
 if [ -n "${BACKUP_RCLONE_REMOTE:-}" ]; then
   rclone copy "$DEST" "$BACKUP_RCLONE_REMOTE" --max-age 48h
+  # Off-site retention (default 90 days) so the Drive doesn't fill up.
+  rclone delete "$BACKUP_RCLONE_REMOTE" --min-age "${BACKUP_REMOTE_KEEP_DAYS:-90}d"
 fi
 echo "[backup] $(date "+%F %T") ok: $(du -sh "$DEST" | cut -f1) en $DEST"

@@ -63,7 +63,12 @@ pnpm test:e2e            # Playwright (projects: public, public-mobile, admin)
 
 ## Despliegue
 
-VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. **No se usa Vercel** (el proyecto vinculado en `.vercel/` es del sitio viejo; se desvincula tras el cambio de DNS). Guía completa en `deploy/README.md`.
+VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. La web nueva **no** se publica en Vercel: hoy el sitio viejo sigue en Vercel y se migra al VPS **cuando el cliente dé el OK** (antes, prueba en `nuevo.moramachadoconstrucciones.com` con `SITE_NOINDEX=true`). Guía paso a paso (nivel junior) en `deploy/README.md`.
+
+- Dominio registrado en **GoDaddy**; **el DNS está en Vercel** (nameservers `ns*.vercel-dns.com`): los registros se editan en Vercel → Domains. Al lanzar, quitar el dominio del **proyecto** viejo, nunca de la cuenta (se borraría la zona DNS).
+- Casillas info@/sofia@/rodo@ en **Webempresa**. A oct-2026 el dominio **no tiene MX**: hay que cargar los MX/SPF/DKIM de Webempresa en el DNS de Vercel (paso 12 de la guía). Resend usa `send` y `resend._domainkey` (no toca la raíz).
+- El repo es público hoy y pasa a **privado** con el VPS: el VPS clona por SSH con una deploy key de solo lectura.
+- Backups externos a Google Drive con rclone (`gdrive:mora-backups`, scope `drive.file`, retención 90 días).
 
 - Releases como git worktrees en `/var/www/mora/releases`, `current` → activa, `shared/.env`, `uploads/`, `backups/`. `deploy/deploy.sh [rama]`: fetch → worktree → install → `migrate deploy` → `db:seed` (idempotente; en DB vacía carga todo) → build → copia `public` y `.next/static` al standalone → `pm2 reload` → `/healthz`, con rollback.
 - PM2: **una sola instancia fork** (la caché de `'use cache'`/`updateTag` vive en el proceso). `node --env-file=shared/.env`, `HOSTNAME=127.0.0.1`.
@@ -81,7 +86,7 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. **No se usa Vercel** 
 - Imágenes: variantes WebP pre-generadas con sharp (480/960/1600/2400) + `srcset` propio; sin optimizador de Next en el VPS.
 - Rate limiting en tabla Postgres (sin Redis).
 - Emails con Resend + React Email (decisión del cliente; reemplazó a SMTP/nodemailer). Resend solo envía: las casillas info@, sofia@ y rodo@ siguen en su proveedor y el MX raíz no se toca.
-- WhatsApp principal por defecto: 03487-656133 (más usado en el sitio viejo); 03487-514196 como teléfono. Pendiente de confirmar por el cliente.
+- WhatsApp principal (confirmado por el cliente): 03487-656133 (= +54 9 3487 65-6133); 03487-514196 como teléfono. Email principal: info@moramachadoconstrucciones.com (público y destinatario de las consultas). Colores: se queda el acento actual por ahora.
 
 ## Fases
 
