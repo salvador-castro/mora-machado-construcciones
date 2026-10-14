@@ -9,6 +9,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { IconSquare } from "@/components/ui/icon-square";
 import { Marquee } from "@/components/ui/marquee";
 import { Reveal } from "@/components/ui/reveal";
+import { GridLines } from "@/components/ui/grid-lines";
 import { AccentSwitcher } from "./accent-switcher";
 
 // Internal page. Sample copy below is placeholder for visual QA only.
@@ -158,6 +159,7 @@ export default function StyleguidePage() {
           </div>
         </Container>
       </Section>
+      <GridLines />
     </main>
   );
 }

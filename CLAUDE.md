@@ -24,6 +24,7 @@ pnpm db:seed             # contenido inicial (solo en DB vacía; `pnpm prisma db
 pnpm media:import-legacy # importa las 11 fotos del sitio viejo (desde git 39b8b90 o el sitio en vivo)
 pnpm db:studio
 pnpm db:check            # verifica conexión a Postgres
+pnpm create-admin        # crea/resetea un usuario ADMIN (interactivo)
 ```
 
 ## Entorno local
@@ -40,6 +41,11 @@ pnpm db:check            # verifica conexión a Postgres
 - Rutas `[slug]`: `generateStaticParams` debe devolver ≥1 param (si no hay, `{ slug: "_" }` → 404). Se hace `await params` + `notFound()` antes de cualquier Suspense para tener 404 real, por eso `export const instant = false`.
 - Rich text: `<RichText>` sanitiza con `src/lib/sanitize.ts` (solo imágenes de `/uploads/`). Estilos en `.rich-text` (globals.css).
 - Textos de títulos de secciones en páginas de detalle: `PageContent` key `details`. `pnpm db:seed` sin `--force` crea las keys de `PageContent` que falten (sin pisar ediciones).
+- Admin (`src/app/admin`): `proxy.ts` hace chequeo optimista del JWT; la autorización real es `requireUser(role?)` (`src/lib/auth/session.ts`) en **cada** página y server action. El layout `(panel)` lee la sesión dentro de `<Suspense>`. **Toda página del admin exporta `export const instant = false`** (Next valida cada page por separado).
+- Sesión: JWT HS256 (`jose`, `AUTH_SECRET`) en cookie `mm_session` + fila `Session` revocable. Resetear contraseña o desactivar usuario invalida sesiones. `getCurrentUser` llama `connection()` (jose usa la hora actual).
+- shadcn/ui: componentes en `src/components/admin/ui` (alias en `components.json`), importan `cn` de `@/lib/cn`. Tokens shadcn en `:root` (globals.css; los portales de Radix quedan fuera de `.admin-theme`). No usar `bg-accent` de shadcn: `accent` es el color de marca del sitio; para hovers usar `bg-muted`.
+- Admin de prueba local: `DEV_ADMIN_EMAIL` / `DEV_ADMIN_PASSWORD` en `.env`. Crear/resetear admin: `pnpm create-admin`.
+- Si el CSS no refleja un cambio en dev, puede ser caché de Turbopack: reiniciar `pnpm dev`.
 - El hero no usa `<Reveal>` (es el LCP; debe pintarse sin JS).
 - Al revisar en Chrome automatizado la pestaña está `hidden`: smooth scroll y animaciones no avanzan — no es un bug.
 - Server actions en `src/server/actions/*`, siempre `requireRole()` + validación zod.
@@ -66,4 +72,4 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`outpu
 
 ## Fases
 
-F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout · F7 CRUDs/medios/settings · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
+F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy

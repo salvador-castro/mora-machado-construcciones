@@ -1,3 +1,4 @@
+import { GridLines } from "@/components/ui/grid-lines";
 import { getSettings } from "@/lib/content/queries";
 import { primaryWhatsApp } from "@/lib/whatsapp";
 import { AnnouncementBar } from "./announcement-bar";
@@ -32,6 +33,7 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
           message="Hola, quiero hacer una consulta sobre una obra."
         />
       )}
+      <GridLines />
     </>
   );
 }

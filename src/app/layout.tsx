@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { aspekta } from "@/fonts";
-import { GridLines } from "@/components/ui/grid-lines";
 import { getSettings } from "@/lib/content/queries";
 import { accentVars } from "@/lib/color";
 import "./globals.css";
@@ -23,10 +22,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${aspekta.variable} h-full antialiased`}
       style={accentVars(settings.accentColor)}
     >
-      <body className="flex min-h-full flex-col">
-        {children}
-        <GridLines />
-      </body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }
