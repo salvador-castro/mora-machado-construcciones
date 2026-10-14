@@ -5,6 +5,7 @@ import { LeadStatus } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
 import { requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
+import { sendLeadNotification } from "@/lib/email";
 import { fail, ok, type ActionResult } from "../action-utils";
 
 const statusSchema = z.enum(LeadStatus);
@@ -33,4 +34,17 @@ export async function deleteLead(id: string): Promise<ActionResult> {
   await db.lead.delete({ where: { id } });
   await audit(user.id, "delete", "Lead", id);
   return ok(undefined, "Consulta eliminada.");
+}
+
+/** Re-sends the notification email of a lead whose first attempt failed. */
+export async function retryLeadEmail(id: string): Promise<ActionResult> {
+  const user = await requireUser();
+  const lead = await db.lead.findUnique({ where: { id } });
+  if (!lead) return fail("La consulta no existe.");
+  const res = await sendLeadNotification(lead);
+  await audit(user.id, `email_retry:${res.status}`, "Lead", id);
+  if (res.status === "SENT") return ok(undefined, "Email enviado.");
+  if (res.status === "LOGGED")
+    return ok(undefined, "Sin RESEND_API_KEY: el email se mostró en la consola del servidor.");
+  return fail(`No se pudo enviar: ${res.error}`);
 }

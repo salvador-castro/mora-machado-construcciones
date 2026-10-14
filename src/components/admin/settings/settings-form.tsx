@@ -24,6 +24,7 @@ import { settingsSchema, socialNetworks, type SettingsInput } from "@/lib/conten
 import type { MediaListItem } from "@/lib/media/admin-types";
 import { saveSettings } from "@/server/actions/settings";
 import { LinesField } from "./lines-field";
+import { TestEmailButton } from "./test-email-button";
 
 const NETWORK_LABEL: Record<(typeof socialNetworks)[number], string> = {
   instagram: "Instagram",
@@ -462,6 +463,7 @@ export function SettingsForm({
               />
             </Field>
           </div>
+          <TestEmailButton dirty={formState.isDirty} />
         </FormSection>
 
         <FormSection

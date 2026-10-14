@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, MessageCircle, Phone } from "lucide-react";
+import { LeadEmailStatus } from "@/components/admin/leads/email-status";
 import { LeadManager } from "@/components/admin/leads/lead-manager";
 import { Button } from "@/components/admin/ui/button";
 import { timeAgo } from "@/lib/admin/labels";
@@ -83,6 +84,7 @@ export default async function LeadPage({ params }: PageProps<"/admin/consultas/[
                 </div>
               ))}
           </dl>
+          <LeadEmailStatus id={lead.id} status={lead.emailStatus} info={lead.emailInfo} />
           <div>
             <h2 className="mb-2 text-sm text-muted-foreground">Mensaje</h2>
             <p className="rounded-md bg-muted p-4 text-sm whitespace-pre-wrap">{lead.message}</p>

@@ -68,6 +68,7 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`outpu
 - Auth propia en vez de Auth.js v5 (beta).
 - Imágenes: variantes WebP pre-generadas con sharp (480/960/1600/2400) + `srcset` propio; sin optimizador de Next en el VPS.
 - Rate limiting en tabla Postgres (sin Redis).
+- Emails con Resend + React Email (decisión del cliente; reemplazó a SMTP/nodemailer). Resend solo envía: las casillas info@, sofia@ y rodo@ siguen en su proveedor y el MX raíz no se toca.
 - WhatsApp principal por defecto: 03487-656133 (más usado en el sitio viejo); 03487-514196 como teléfono. Pendiente de confirmar por el cliente.
 
 ## Fases
@@ -84,7 +85,8 @@ F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F
 ## Contacto y consultas
 
 - Formulario público (`ContactForm`) → server action `submitLead` (`src/server/actions/contact.ts`): honeypot `website` (responde ok sin guardar), rate limit por IP hasheada (5 / 15 min en prod), Turnstile opcional (solo si están `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY`), >3 links → status `SPAM`. Tras guardar ofrece seguir por WhatsApp (no se abre solo: el popup se bloquea después de un await).
-- Email a `SiteSettings.notificationEmails` con `after()` (`src/lib/leads/notify.ts`, nodemailer en `src/lib/mail.ts`). Sin `SMTP_HOST` solo loguea.
+- Email por **Resend** (no SMTP/nodemailer): módulo único `src/lib/email.ts` (`sendLeadNotification`, `sendTestEmail`), plantillas React Email en `src/emails/` (HTML + texto plano). Destinatarios: `SiteSettings.notificationEmails`, fallback `MAIL_TO_DEFAULT`; `replyTo` = email del cliente; asunto «Nueva consulta web – {nombre} – {teléfono}». Se envía con `after()`; el resultado queda en `Lead.emailStatus` (SENT/FAILED) + `emailInfo` (id de Resend o error) y el detalle de la consulta ofrece «Reintentar envío». Sin `RESEND_API_KEY` en dev el email se imprime en consola; en prod sin key → FAILED. Acuse al cliente opcional con `LEAD_CONFIRMATION_EMAIL=true`. Alta del dominio/DNS en `deploy/README.md`.
+- `src/lib/email.ts` usa `createElement` (no JSX) para mantener la extensión `.ts`. React Email (`react-dom/server`) funciona en server actions/`after()` de Next, pero **no** en scripts con `--conditions=react-server`.
 - Admin: `/admin/consultas` (filtro por estado en `?estado=`, búsqueda `?q=`, paginado), detalle con estado/notas/borrar, export CSV en `/admin/consultas-export` (mismos filtros, BOM UTF-8, anti CSV-injection).
 - e2e: Next 16 deja la página anterior oculta en el DOM (Activity) → en Playwright preferir `getByRole` (ignora lo oculto) sobre `getByLabel`/`getByText`.
 

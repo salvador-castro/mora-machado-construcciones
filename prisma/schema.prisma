@@ -318,6 +318,12 @@ model BlogPost {
 
 // ─── Leads ─────────────────────────────────────────────────────
 
+/// Result of the lead notification email (null: not attempted, e.g. spam or dev without Resend).
+enum EmailStatus {
+  SENT
+  FAILED
+}
+
 enum LeadStatus {
   NEW
   CONTACTED
@@ -341,6 +347,9 @@ model Lead {
   /// SHA-256 of IP + IP_HASH_SALT (never store raw IPs).
   ipHash      String?
   userAgent   String?
+  emailStatus EmailStatus?
+  /// Resend message id when sent, error message when it failed.
+  emailInfo   String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 

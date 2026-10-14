@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { after } from "next/server";
 import { db } from "@/lib/db";
-import { notifyNewLead } from "@/lib/leads/notify";
+import { sendLeadNotification } from "@/lib/email";
 import { clientIp, hashIp, rateLimit } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { leadSchema } from "@/lib/validation/lead";
@@ -67,6 +67,7 @@ export async function submitLead(data: unknown, turnstileToken?: string): Promis
     },
   });
 
-  if (saved.status === "NEW") after(() => notifyNewLead(saved));
+  // Email after the response; the outcome is stored on the lead (emailStatus).
+  if (saved.status === "NEW") after(() => sendLeadNotification(saved));
   return { ok: true };
 }
