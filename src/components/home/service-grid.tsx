@@ -32,7 +32,7 @@ export function ServiceGrid({
         >
           <div className="flex items-start justify-between">
             <IconSquare icon={iconByName(s.icon)} size="sm" />
-            <span className="text-eyebrow text-paper/48">{String(i + 1).padStart(2, "0")}</span>
+            <span className="text-eyebrow text-paper/64">{String(i + 1).padStart(2, "0")}</span>
           </div>
           <Title className="mt-10 text-h4">
             <Link href={`/servicios/${s.slug}`} className="after:absolute after:inset-0">
@@ -42,7 +42,7 @@ export function ServiceGrid({
           <p className="mt-3 flex-1 text-paper/64">{s.shortDescription}</p>
           <ArrowRight
             aria-hidden
-            className="mt-8 size-5 text-paper/48 transition-all duration-200 group-hover:translate-x-1 group-hover:text-accent"
+            className="mt-8 size-5 text-paper/64 transition-all duration-200 group-hover:translate-x-1 group-hover:text-accent"
           />
         </Reveal>
       ))}

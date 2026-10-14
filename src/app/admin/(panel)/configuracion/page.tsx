@@ -34,6 +34,7 @@ export default async function SettingsPage() {
     announcementUrl: s.announcementUrl ?? "",
     announcementEnabled: s.announcementEnabled,
     footerText: s.footerText ?? "",
+    whatsappMessage: s.whatsappMessage,
     defaultSeoTitle: s.defaultSeoTitle,
     defaultSeoDescription: s.defaultSeoDescription,
     defaultOgImageId: s.defaultOgImageId,

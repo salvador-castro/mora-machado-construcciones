@@ -30,7 +30,7 @@ export function ProjectsExplorer({
       )}
     >
       {label}
-      <span className={active === slug ? "text-paper/64" : "text-ink/48"}>{count}</span>
+      <span className={active === slug ? "text-paper/64" : "text-ink/64"}>{count}</span>
     </button>
   );
 

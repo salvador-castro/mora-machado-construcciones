@@ -115,7 +115,7 @@ export function MenuOverlay({ contact }: { contact: ContactLine[] }) {
                           active ? "text-accent" : "hover:text-accent",
                         )}
                       >
-                        <span className="text-eyebrow text-paper/48">
+                        <span className="text-eyebrow text-paper/64">
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         {link.label}
@@ -129,7 +129,7 @@ export function MenuOverlay({ contact }: { contact: ContactLine[] }) {
             <div className="space-y-6 border-t border-paper/16 pt-8 lg:col-span-4 lg:self-end lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
               {contact.map((c) => (
                 <div key={c.label}>
-                  <p className="text-eyebrow text-paper/48">{c.label}</p>
+                  <p className="text-eyebrow text-paper/64">{c.label}</p>
                   {c.href ? (
                     <a href={c.href} className="text-h4 hover:text-accent">
                       {c.value}

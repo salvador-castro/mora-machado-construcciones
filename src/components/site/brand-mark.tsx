@@ -45,7 +45,7 @@ export function BrandMark({
           </span>
           <span className="flex flex-col leading-tight">
             <span className="text-[15px] font-medium tracking-tight">{brandName}</span>
-            {showTagline && tagline && <span className="text-xs text-current/64">{tagline}</span>}
+            {showTagline && tagline && <span className="text-xs text-current/88">{tagline}</span>}
           </span>
         </>
       )}

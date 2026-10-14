@@ -169,10 +169,13 @@ export function ListManager({
 
             if (grid) {
               return (
-                <div
-                  className={cn("flex h-full flex-col", row.published === false && "opacity-60")}
-                >
-                  <div className="relative aspect-4/3 overflow-hidden rounded-t-lg bg-muted">
+                <div className="flex h-full flex-col">
+                  <div
+                    className={cn(
+                      "relative aspect-4/3 overflow-hidden rounded-t-lg bg-muted",
+                      row.published === false && "[&_img]:opacity-50",
+                    )}
+                  >
                     {thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
                       <img
@@ -187,6 +190,7 @@ export function ListManager({
                   </div>
                   <div className="flex flex-1 flex-col gap-2 p-2">
                     <p className="line-clamp-2 text-xs text-muted-foreground">
+                      {row.published === false && <span className="font-medium">Oculto · </span>}
                       {title || thumb?.alt}
                     </p>
                     <div className="mt-auto flex justify-end">{actions}</div>
@@ -196,12 +200,7 @@ export function ListManager({
             }
 
             return (
-              <div
-                className={cn(
-                  "flex items-center gap-3 px-2 py-2.5 sm:px-3",
-                  row.published === false && "opacity-60",
-                )}
-              >
+              <div className="flex items-center gap-3 px-2 py-2.5 sm:px-3">
                 {handle}
                 {config.thumb &&
                   (thumb ? (
@@ -209,7 +208,10 @@ export function ListManager({
                     <img
                       src={thumb.thumbUrl}
                       alt=""
-                      className="size-10 shrink-0 rounded object-cover"
+                      className={cn(
+                        "size-10 shrink-0 rounded object-cover",
+                        row.published === false && "opacity-50",
+                      )}
                     />
                   ) : (
                     <span className="size-10 shrink-0 rounded bg-muted" />
@@ -219,6 +221,11 @@ export function ListManager({
                     {title}
                     {row.featured === true && (
                       <Star className="size-3.5 fill-current" aria-label="Destacado" />
+                    )}
+                    {row.published === false && (
+                      <span className="rounded-full border px-2 py-0.5 text-xs font-normal text-muted-foreground">
+                        Oculto
+                      </span>
                     )}
                   </p>
                   {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}

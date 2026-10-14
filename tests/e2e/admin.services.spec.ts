@@ -5,7 +5,7 @@ test("create a service as draft, publish it, see it on the site, then delete it"
 }) => {
   const title = `Servicio E2E ${Date.now()}`;
   await page.goto("/admin/servicios/nuevo");
-  await page.getByLabel("Título", { exact: true }).fill(title);
+  await page.getByRole("textbox", { name: "Título", exact: true }).fill(title);
   await expect(page.getByLabel("Dirección (slug)")).toHaveValue(/^servicio-e2e-\d+$/);
   const slug = await page.getByLabel("Dirección (slug)").inputValue();
   await page.getByLabel("Descripción corta").fill("Descripción de prueba del servicio.");
@@ -15,6 +15,8 @@ test("create a service as draft, publish it, see it on the site, then delete it"
   await page.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByText("Servicio creado.")).toBeVisible();
   await expect(page).toHaveURL(/\/admin\/servicios\/[a-z0-9]+$/);
+  // The editor remounts on the [id] page; interact only once it's there.
+  await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
 
   // Unpublished → 404 on the public site.
   expect((await page.request.get(`/servicios/${slug}`)).status()).toBe(404);

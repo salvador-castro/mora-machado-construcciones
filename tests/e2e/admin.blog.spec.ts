@@ -3,12 +3,13 @@ import { expect, test } from "@playwright/test";
 test("draft posts stay hidden until published", async ({ page }) => {
   const title = `Nota E2E ${Date.now()}`;
   await page.goto("/admin/blog/nueva");
-  await page.getByLabel("Título", { exact: true }).fill(title);
+  await page.getByRole("textbox", { name: "Título", exact: true }).fill(title);
   const slug = await page.getByLabel("Dirección (slug)").inputValue();
   await page.getByLabel("Bajada").fill("Bajada de prueba.");
   await page.getByRole("button", { name: "Guardar borrador" }).click();
   await expect(page.getByText("Borrador guardado.")).toBeVisible();
   await expect(page).toHaveURL(/\/admin\/blog\/[a-z0-9]+$/);
+  await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
   expect((await page.request.get(`/blog/${slug}`)).status()).toBe(404);
 
   // Publishing without content is rejected.

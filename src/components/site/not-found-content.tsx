@@ -23,12 +23,12 @@ export function NotFoundContent() {
             </ButtonLink>
           </div>
         </div>
+        {/* Decorative, rendered as CSS content (the h1 already says it). */}
         <p
           aria-hidden
-          className="text-[clamp(8rem,20vw,18rem)] leading-none font-medium tracking-tighter text-ink/8 lg:col-span-4 lg:text-right"
-        >
-          404
-        </p>
+          data-n="404"
+          className="text-[clamp(8rem,20vw,18rem)] leading-none font-medium tracking-tighter text-ink/8 before:content-[attr(data-n)] lg:col-span-4 lg:text-right"
+        />
       </div>
     </Section>
   );

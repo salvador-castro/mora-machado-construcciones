@@ -21,7 +21,7 @@ export function Field({
 }) {
   return (
     <div className={cn("space-y-2", className)}>
-      <Label htmlFor={id}>
+      <Label id={`${id}-label`} htmlFor={id}>
         {label}
         {!required && <span className="font-normal text-muted-foreground">(opcional)</span>}
       </Label>

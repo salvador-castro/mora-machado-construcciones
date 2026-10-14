@@ -34,11 +34,11 @@ export function FeaturedSlider({ projects }: { projects: ProjectCardData[] }) {
               <div className="flex flex-col justify-end gap-6 lg:col-span-5 lg:pb-2">
                 <dl className="grid grid-cols-2 gap-4">
                   <div>
-                    <dt className="text-eyebrow text-paper/48">Categoría</dt>
+                    <dt className="text-eyebrow text-paper/64">Categoría</dt>
                     <dd className="mt-1">{p.category.name}</dd>
                   </div>
                   <div>
-                    <dt className="text-eyebrow text-paper/48">Ubicación</dt>
+                    <dt className="text-eyebrow text-paper/64">Ubicación</dt>
                     <dd className="mt-1">{p.location}</dd>
                   </div>
                 </dl>

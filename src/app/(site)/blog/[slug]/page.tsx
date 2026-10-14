@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { CtaSection } from "@/components/home/cta-section";
+import { JsonLd } from "@/components/seo/json-ld";
 import { PostCard } from "@/components/site/post-card";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -8,7 +9,7 @@ import { RichText } from "@/components/ui/rich-text";
 import { Section } from "@/components/ui/section";
 import { getPageContent, getPostBySlug, getPostSlugs } from "@/lib/content/queries";
 import { formatDate } from "@/lib/format";
-import { pageMetadata } from "@/lib/seo";
+import { mediaAbsoluteUrl, pageMetadata, siteUrl } from "@/lib/seo";
 
 // params are awaited before any Suspense so unknown slugs return a real 404 status.
 // Known slugs are prerendered, so navigation is still instant in practice.
@@ -45,7 +46,7 @@ export default async function PostPage({ params }: PageProps<"/blog/[slug]">) {
         <article className="container-site space-y-12">
           <Breadcrumbs items={[{ label: "Blog", href: "/blog" }, { label: post.title }]} />
           <header className="mx-auto max-w-4xl space-y-6 text-center">
-            <p className="flex justify-center gap-4 text-eyebrow text-ink/56">
+            <p className="flex justify-center gap-4 text-eyebrow text-ink/64">
               {post.category && <span>{post.category.name}</span>}
               {post.publishedAt && (
                 <time dateTime={post.publishedAt.toISOString()}>
@@ -67,6 +68,22 @@ export default async function PostPage({ params }: PageProps<"/blog/[slug]">) {
             </div>
           )}
           <RichText html={post.content} className="mx-auto" />
+          <JsonLd
+            data={{
+              "@type": "BlogPosting",
+              headline: post.title,
+              description: post.excerpt,
+              url: siteUrl(`/blog/${post.slug}`),
+              mainEntityOfPage: siteUrl(`/blog/${post.slug}`),
+              image: mediaAbsoluteUrl(post.cover),
+              datePublished: post.publishedAt?.toISOString(),
+              dateModified: post.updatedAt.toISOString(),
+              author: post.author
+                ? { "@type": "Person", name: post.author.name }
+                : { "@id": siteUrl("/#empresa") },
+              publisher: { "@id": siteUrl("/#empresa") },
+            }}
+          />
         </article>
       </Section>
 

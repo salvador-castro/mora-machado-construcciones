@@ -32,7 +32,7 @@ export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
         </div>
 
         <nav aria-label="Pie de página" className="lg:col-span-3 lg:col-start-7">
-          <p className="mb-4 text-eyebrow text-paper/64">Navegación</p>
+          <p className="mb-4 text-eyebrow text-paper/88">Navegación</p>
           <ul className="space-y-2">
             {NAV_LINKS.map((l) => (
               <li key={l.href}>
@@ -46,7 +46,7 @@ export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
 
         <div className="space-y-6 lg:col-span-3">
           <div>
-            <p className="mb-4 text-eyebrow text-paper/64">Contacto</p>
+            <p className="mb-4 text-eyebrow text-paper/88">Contacto</p>
             <ul className="space-y-2">
               {settings.phones.map((p) => (
                 <li key={p.number}>
@@ -66,12 +66,12 @@ export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
                 </li>
               )}
               {settings.address && <li className="text-paper/88">{settings.address}</li>}
-              {settings.coverage && <li className="text-paper/64">{settings.coverage}</li>}
+              {settings.coverage && <li className="text-paper/88">{settings.coverage}</li>}
             </ul>
           </div>
           {settings.socials.length > 0 && (
             <div>
-              <p className="mb-4 text-eyebrow text-paper/64">Redes</p>
+              <p className="mb-4 text-eyebrow text-paper/88">Redes</p>
               <ul className="flex flex-wrap gap-x-4 gap-y-2">
                 {settings.socials.map((s) => (
                   <li key={s.url}>
@@ -92,7 +92,7 @@ export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
       </div>
 
       <div className="border-t border-paper/16">
-        <div className="container-site flex flex-col gap-3 pt-6 pb-24 text-sm text-paper/72 md:flex-row md:items-center md:justify-between md:py-6 md:pr-24">
+        <div className="container-site flex flex-col gap-3 pt-6 pb-24 text-sm text-paper/88 md:flex-row md:items-center md:justify-between md:py-6 md:pr-24">
           <p>
             © <CurrentYear /> {settings.brandName}. Todos los derechos reservados.
           </p>

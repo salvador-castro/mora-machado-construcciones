@@ -21,7 +21,7 @@ export default async function PrivacyPage() {
         <div className="grid gap-10 lg:grid-cols-12">
           <header className="space-y-4 lg:col-span-4">
             <h1 className="text-h2">{page.title}</h1>
-            <p className="text-sm text-ink/56">Última actualización: {page.lastUpdated}</p>
+            <p className="text-sm text-ink/64">Última actualización: {page.lastUpdated}</p>
           </header>
           <RichText html={page.body} className="lg:col-span-7 lg:col-start-6" />
         </div>

@@ -111,7 +111,7 @@ export function UsersManager({ rows }: { rows: UserRow[] }) {
           </TableHeader>
           <TableBody>
             {rows.map((u) => (
-              <TableRow key={u.id} className={u.active ? undefined : "opacity-60"}>
+              <TableRow key={u.id}>
                 <TableCell className="w-full max-w-0">
                   <span className="block truncate font-medium">
                     {u.name}

@@ -79,6 +79,8 @@ model SiteSettings {
   defaultOgImage        Media?   @relation("SettingsOgImage", fields: [defaultOgImageId], references: [id], onDelete: Restrict)
   notificationEmails    String[] @default([])
   budgetRanges          String[] @default([])
+  /// Prefilled text of the floating WhatsApp button
+  whatsappMessage       String   @default("Hola, quiero hacer una consulta sobre una obra.")
   /// Pending client confirmations shown as TODOs in the admin: [{ id, text, done }]
   pendingTodos          Json     @default("[]")
   updatedById           String?

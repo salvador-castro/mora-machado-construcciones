@@ -118,7 +118,9 @@ export async function changePassword(data: unknown): Promise<ActionResult> {
   const parsed = changePasswordSchema.safeParse(data);
   if (!parsed.success) return fromZodError(parsed.error);
 
-  const limit = await rateLimit(`password-change:${user.id}`, 5, 15 * 60);
+  // Generous in dev so e2e reruns don't trip it.
+  const max = process.env.NODE_ENV === "production" ? 5 : 100;
+  const limit = await rateLimit(`password-change:${user.id}`, max, 15 * 60);
   if (!limit.ok) return fail("Demasiados intentos. Esperá unos minutos y volvé a probar.");
 
   const row = await db.user.findUniqueOrThrow({ where: { id: user.id } });

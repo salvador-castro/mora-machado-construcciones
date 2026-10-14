@@ -33,8 +33,11 @@ export default async function ProjectsPage() {
         highlight={header?.highlight}
         subtitle={header?.subtitle}
       />
-      <Section tone="light-2" aria-label="Listado de obras">
+      <Section tone="light-2" aria-labelledby="listado-obras">
         <div className="container-site">
+          <h2 id="listado-obras" className="sr-only">
+            Listado de obras
+          </h2>
           {projects.length > 0 ? (
             <ProjectsExplorer projects={projects} categories={categories} />
           ) : (

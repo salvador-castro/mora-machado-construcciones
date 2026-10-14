@@ -84,7 +84,7 @@ export default async function ProjectPage({ params }: PageProps<"/obras/[slug]">
         <dl className="grid grid-cols-2 gap-6 border-t border-ink/16 pt-6 md:grid-cols-3 lg:grid-cols-5">
           {meta.map((m) => (
             <div key={m.label}>
-              <dt className="text-eyebrow text-ink/48">{m.label}</dt>
+              <dt className="text-eyebrow text-ink/64">{m.label}</dt>
               <dd className="mt-1">{m.value}</dd>
             </div>
           ))}

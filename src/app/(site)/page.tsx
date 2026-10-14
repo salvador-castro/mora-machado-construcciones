@@ -23,6 +23,12 @@ import {
   getSettings,
   getValueItems,
 } from "@/lib/content/queries";
+import { pageMetadata } from "@/lib/seo";
+
+/** Home uses the default SEO title/description/image from Settings. */
+export function generateMetadata() {
+  return pageMetadata({ path: "/" });
+}
 
 export default async function HomePage() {
   const [

@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("create a project with a gallery photo, publish it, then delete it", async ({ page }) => {
   const title = `Obra E2E ${Date.now()}`;
   await page.goto("/admin/obras/nueva");
-  await page.getByLabel("Título", { exact: true }).fill(title);
+  await page.getByRole("textbox", { name: "Título", exact: true }).fill(title);
   const slug = await page.getByLabel("Dirección (slug)").inputValue();
   await page.getByLabel("Ubicación").fill("Zárate");
   await page.getByLabel("Año").fill("2024");
@@ -20,7 +20,10 @@ test("create a project with a gallery photo, publish it, then delete it", async 
   await page.getByRole("button", { name: "Crear obra" }).click();
   await expect(page.getByText("Obra creada.")).toBeVisible();
   await expect(page).toHaveURL(/\/admin\/obras\/[a-z0-9]+$/);
-  await expect(page.getByLabel("Epígrafe de la foto 1")).toHaveValue("Epígrafe E2E");
+  await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Epígrafe de la foto 1" })).toHaveValue(
+    "Epígrafe E2E",
+  );
 
   const res = await page.request.get(`/obras/${slug}`);
   expect(res.status()).toBe(200);

@@ -25,7 +25,7 @@ export function ProjectCard({
           />
         )}
       </div>
-      <p className="mt-6 text-eyebrow text-current/56">{project.category.name}</p>
+      <p className="mt-6 text-eyebrow text-current/64">{project.category.name}</p>
       <h3 className="mt-3 text-[clamp(1.5rem,1.2rem+1vw,2rem)] leading-[1.1] font-medium tracking-[-0.03em]">
         <Link href={href} className="after:absolute after:inset-0">
           {project.title}
@@ -34,12 +34,12 @@ export function ProjectCard({
       <p className="mt-3 max-w-xl text-current/72">{project.excerpt}</p>
       <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-current/16 pt-4">
         <div>
-          <dt className="text-eyebrow text-current/48">Ubicación</dt>
+          <dt className="text-eyebrow text-current/64">Ubicación</dt>
           <dd className="mt-1">{project.location}</dd>
         </div>
         {project.service && (
           <div>
-            <dt className="text-eyebrow text-current/48">Servicio</dt>
+            <dt className="text-eyebrow text-current/64">Servicio</dt>
             <dd className="mt-1">{project.service.title}</dd>
           </div>
         )}

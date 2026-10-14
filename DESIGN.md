@@ -61,12 +61,12 @@ Lenguaje visual editorial inspirado en el template "Foster & Reeves" (BYQ Studio
 
 ## 5. Movimiento
 
-- Reveal en scroll: fade + translateY(24px) → 0, 600ms, `cubic-bezier(.2,.7,.2,1)`, stagger 80ms.
+- Reveal en scroll: fade + translateY(24px) → 0, 600ms, `cubic-bezier(.2,.7,.2,1)`, stagger 80ms. Implementado con IntersectionObserver + CSS (`[data-reveal]` en globals.css), sin librería de animación; `<noscript>` lo deja visible.
 - Todo desactivado con `prefers-reduced-motion: reduce`.
 
 ## 6. Accesibilidad
 
-- Contraste AA mínimo. Foco visible: outline 2px `--accent` + offset 2px (sobre claro usar `--ink`).
+- Contraste AA mínimo (verificado con axe en `tests/e2e/*.a11y.spec.ts`). Texto con opacidad: ≥ `/64` sobre paper/paper-2, ≥ `/72` sobre sand, ≥ `/80` sobre stone; sobre ink alcanza `/48`. Números/decorados muy tenues (`/8`, `/16`) van como contenido CSS (`before:content-[attr(data-n)]`) + `aria-hidden`. En el admin no atenuar filas con `opacity`: usar etiqueta «Oculto». Foco visible: outline 2px `--accent` + offset 2px (sobre claro usar `--ink`).
 - `alt` obligatorio al subir imágenes. Targets táctiles ≥ 44px.
 
 ## 7. Admin

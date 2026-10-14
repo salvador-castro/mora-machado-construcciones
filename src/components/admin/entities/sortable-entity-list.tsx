@@ -83,16 +83,18 @@ export function SortableEntityList({
       className="divide-y overflow-hidden rounded-lg border bg-card"
       itemClassName="bg-card"
       renderItem={(row, handle) => (
-        <div
-          className={cn(
-            "flex items-center gap-3 px-2 py-2.5 sm:px-3",
-            !row.published && "opacity-60",
-          )}
-        >
+        <div className="flex items-center gap-3 px-2 py-2.5 sm:px-3">
           {handle}
           {row.thumbUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
-            <img src={row.thumbUrl} alt="" className="size-10 shrink-0 rounded object-cover" />
+            <img
+              src={row.thumbUrl}
+              alt=""
+              className={cn(
+                "size-10 shrink-0 rounded object-cover",
+                !row.published && "opacity-50",
+              )}
+            />
           ) : (
             <span className="size-10 shrink-0 rounded bg-muted" />
           )}
@@ -106,6 +108,11 @@ export function SortableEntityList({
                 <span className="block truncate text-sm text-muted-foreground">{row.subtitle}</span>
               )}
             </span>
+            {!row.published && (
+              <span className="shrink-0 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                {entity === "project" ? "Oculta" : "Oculto"}
+              </span>
+            )}
             <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           </Link>
           {entity === "project" && (

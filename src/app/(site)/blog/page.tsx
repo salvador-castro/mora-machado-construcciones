@@ -21,8 +21,11 @@ export default async function BlogPage() {
         highlight={header?.highlight}
         subtitle={header?.subtitle}
       />
-      <Section tone="light-2" aria-label="Artículos">
+      <Section tone="light-2" aria-labelledby="listado-notas">
         <div className="container-site">
+          <h2 id="listado-notas" className="sr-only">
+            Notas
+          </h2>
           {posts.length > 0 ? (
             <div className="grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-8">
               {posts.map((post) => (

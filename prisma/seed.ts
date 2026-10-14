@@ -117,6 +117,7 @@ function buildPages(img: LegacyMedia) {
       formEyebrow: "Consulta",
       formTitle: "Envianos tu consulta",
       formText: "Completá tus datos y te respondemos por WhatsApp a la brevedad.",
+      consentText: "Acepto que Mora Machado Construcciones guarde mis datos para contactarme.",
     },
     // DRAFT
     about: {
@@ -193,17 +194,37 @@ function buildPages(img: LegacyMedia) {
   return pages;
 }
 
-/** Creates missing PageContent rows; never overwrites client edits. */
+/**
+ * Creates missing PageContent rows and fills fields added to a schema later
+ * (top-level keys absent from the stored JSON). Never overwrites client edits.
+ */
 async function ensurePages(img: LegacyMedia) {
   const pages = buildPages(img);
-  const existing = new Set(
-    (await db.pageContent.findMany({ select: { key: true } })).map((r) => r.key),
+  const rows = new Map(
+    (await db.pageContent.findMany({ select: { key: true, data: true } })).map((r) => [
+      r.key,
+      r.data as Record<string, unknown>,
+    ]),
   );
-  const missing = (Object.keys(pages) as PageContentKey[]).filter((k) => !existing.has(k));
-  for (const key of missing) {
-    await db.pageContent.create({ data: { key, data: pageContentSchemas[key].parse(pages[key]) } });
+  const added: string[] = [];
+  for (const key of Object.keys(pages) as PageContentKey[]) {
+    const defaults = pageContentSchemas[key].parse(pages[key]) as Record<string, unknown>;
+    const current = rows.get(key);
+    if (!current) {
+      await db.pageContent.create({ data: { key, data: defaults as object } });
+      added.push(key);
+      continue;
+    }
+    const newFields = Object.keys(defaults).filter((f) => !(f in current));
+    if (newFields.length) {
+      await db.pageContent.update({
+        where: { key },
+        data: { data: { ...defaults, ...current } as object },
+      });
+      added.push(`${key} (${newFields.join(", ")})`);
+    }
   }
-  return missing;
+  return added;
 }
 
 async function main() {

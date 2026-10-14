@@ -124,6 +124,7 @@ export function SettingsForm({
                   />
                   <Input
                     id="f-accentColor"
+                    aria-label="Color en hexadecimal"
                     className="w-32 font-mono uppercase"
                     value={field.value}
                     onChange={(e) => field.onChange(e.target.value)}
@@ -267,6 +268,15 @@ export function SettingsForm({
           >
             <Plus /> Agregar teléfono
           </Button>
+          <Field
+            id="f-whatsappMessage"
+            label="Mensaje del botón flotante de WhatsApp"
+            help="Texto que aparece escrito al abrir WhatsApp desde el botón verde."
+            required
+            error={errors.whatsappMessage?.message}
+          >
+            <Textarea id="f-whatsappMessage" rows={2} {...register("whatsappMessage")} />
+          </Field>
         </FormSection>
 
         <FormSection title="Contacto y ubicación">

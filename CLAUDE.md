@@ -40,7 +40,7 @@ pnpm create-admin        # crea/resetea un usuario ADMIN (interactivo)
 - No usar `new Date()`/`Math.random()` en render: Next 16 lo prohíbe en el shell estático (ver `CurrentYear`, cacheado con `cacheLife("days")`).
 - Rutas `[slug]`: `generateStaticParams` debe devolver ≥1 param (si no hay, `{ slug: "_" }` → 404). Se hace `await params` + `notFound()` antes de cualquier Suspense para tener 404 real, por eso `export const instant = false`.
 - Rich text: `<RichText>` sanitiza con `src/lib/sanitize.ts` (solo imágenes de `/uploads/`). Estilos en `.rich-text` (globals.css).
-- Textos de títulos de secciones en páginas de detalle: `PageContent` key `details`. `pnpm db:seed` sin `--force` crea las keys de `PageContent` que falten (sin pisar ediciones).
+- Textos de títulos de secciones en páginas de detalle: `PageContent` key `details`. `pnpm db:seed` sin `--force` crea las keys de `PageContent` que falten **y completa campos nuevos** de keys existentes (sin pisar ediciones): al agregar un campo a un schema de `PageContent`, poner su default en `prisma/seed.ts` y correr `pnpm db:seed`.
 - Admin (`src/app/admin`): `proxy.ts` hace chequeo optimista del JWT; la autorización real es `requireUser(role?)` (`src/lib/auth/session.ts`) en **cada** página y server action. El layout `(panel)` lee la sesión dentro de `<Suspense>`. **Toda página del admin exporta `export const instant = false`** (Next valida cada page por separado).
 - Sesión: JWT HS256 (`jose`, `AUTH_SECRET`) en cookie `mm_session` + fila `Session` revocable. Resetear contraseña o desactivar usuario invalida sesiones. `getCurrentUser` llama `connection()` (jose usa la hora actual).
 - shadcn/ui: componentes en `src/components/admin/ui` (alias en `components.json`), importan `cn` de `@/lib/cn`. Tokens shadcn en `:root` (globals.css; los portales de Radix quedan fuera de `.admin-theme`). No usar `bg-accent` de shadcn: `accent` es el color de marca del sitio; para hovers usar `bg-muted`.
@@ -72,7 +72,7 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`outpu
 
 ## Fases
 
-F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings ✅ · F8 contacto + leads ✅ · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
+F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings ✅ · F8 contacto + leads ✅ · F9 SEO/a11y/perf/seguridad ✅ · F10 tests + deploy
 
 ## Admin: editores de entidades
 
@@ -87,6 +87,16 @@ F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F
 - Email a `SiteSettings.notificationEmails` con `after()` (`src/lib/leads/notify.ts`, nodemailer en `src/lib/mail.ts`). Sin `SMTP_HOST` solo loguea.
 - Admin: `/admin/consultas` (filtro por estado en `?estado=`, búsqueda `?q=`, paginado), detalle con estado/notas/borrar, export CSV en `/admin/consultas-export` (mismos filtros, BOM UTF-8, anti CSV-injection).
 - e2e: Next 16 deja la página anterior oculta en el DOM (Activity) → en Playwright preferir `getByRole` (ignora lo oculto) sobre `getByLabel`/`getByText`.
+
+## SEO, seguridad y rendimiento (F9)
+
+- `sitemap.xml` y `robots.txt` (`src/app/sitemap.ts`, `robots.ts`); el sitemap sale de `getSitemapData()` (cacheado, se invalida con los tags de contenido).
+- JSON-LD con `<JsonLd>` (`src/components/seo/json-ld.tsx`): `GeneralContractor` en `SiteChrome` (desde Settings), `BreadcrumbList` en `<Breadcrumbs>`, `BlogPosting` en notas.
+- Favicon/apple-touch: `/site-icon?s=32|180|192|512` (favicon de Settings recortado con sharp, o monograma sobre el acento). La URL lleva `?v=` para cache largo.
+- Cabeceras de seguridad + CSP en `next.config.ts` (sin nonces: las páginas se prerenderizan → `'unsafe-inline'` en scripts). Permitidos: Google Maps y Turnstile en `frame-src`. HSTS y `upgrade-insecure-requests` solo si `SITE_URL` es https. Si se agrega un servicio externo (script/iframe/fetch), sumarlo a la CSP.
+- Bundle público sin zod ni librerías de animación: el formulario de contacto valida en la server action. No importar `@/lib/validation/*` (zod) desde componentes cliente del sitio.
+- Textos de negocio editables agregados en F9: `home.contact.consentText` (casilla de consentimiento) y `SiteSettings.whatsappMessage` (botón flotante).
+- Tests: `public.a11y` / `admin.a11y` (axe WCAG A/AA) y `public.seo`. Lighthouse (móvil, build de prod): a11y/best-practices/SEO 100; perf 92–99.
 
 ## Entorno: iCloud
 

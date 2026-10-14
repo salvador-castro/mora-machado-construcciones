@@ -34,6 +34,7 @@ export async function getSettings() {
     where: { id: 1 },
     include: {
       logo: { select: mediaAssetSelect },
+      favicon: { select: mediaAssetSelect },
       defaultOgImage: { select: mediaAssetSelect },
     },
   });
@@ -44,6 +45,7 @@ export async function getSettings() {
     phones: phonesSchema.catch([]).parse(s.phones),
     socials: socialsSchema.catch([]).parse(s.socials),
     logo: s.logo ? toMediaAsset(s.logo) : null,
+    favicon: s.favicon ? toMediaAsset(s.favicon) : null,
     defaultOgImage: s.defaultOgImage ? toMediaAsset(s.defaultOgImage) : null,
   };
 }
@@ -375,4 +377,26 @@ export async function getPostBySlug(slug: string) {
     cover: post.cover ? toMediaAsset(post.cover) : null,
     related: related.map(withCover),
   };
+}
+
+// ─── Sitemap ───────────────────────────────────────────────────
+
+export async function getSitemapData() {
+  "use cache";
+  cached(
+    TAGS.services,
+    TAGS.projects,
+    TAGS.blog,
+    ...Object.keys(pageContentSchemas).map((k) => TAGS.page(k)),
+  );
+  const [services, projects, posts, pages] = await Promise.all([
+    db.service.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
+    db.project.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
+    db.blogPost.findMany({
+      where: { status: "PUBLISHED" },
+      select: { slug: true, updatedAt: true },
+    }),
+    db.pageContent.findMany({ select: { key: true, published: true, updatedAt: true } }),
+  ]);
+  return { services, projects, posts, pages };
 }

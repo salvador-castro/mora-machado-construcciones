@@ -1,5 +1,7 @@
+import { JsonLd } from "@/components/seo/json-ld";
 import { GridLines } from "@/components/ui/grid-lines";
 import { getSettings } from "@/lib/content/queries";
+import { mediaAbsoluteUrl, siteUrl } from "@/lib/seo";
 import { primaryWhatsApp } from "@/lib/whatsapp";
 import { AnnouncementBar } from "./announcement-bar";
 import { PreviewBanner } from "./preview-banner";
@@ -11,6 +13,7 @@ import { WhatsAppButton } from "./whatsapp-button";
 export async function SiteChrome({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
   const wa = primaryWhatsApp(settings.phones);
+  const mainPhone = wa ?? settings.phones[0];
 
   return (
     <>
@@ -29,13 +32,27 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <SiteFooter settings={settings} />
-      {wa && (
-        <WhatsAppButton
-          number={wa.number}
-          message="Hola, quiero hacer una consulta sobre una obra."
-        />
-      )}
+      {wa && <WhatsAppButton number={wa.number} message={settings.whatsappMessage} />}
       <GridLines />
+      <JsonLd
+        data={{
+          "@type": "GeneralContractor",
+          "@id": siteUrl("/#empresa"),
+          name: settings.brandName,
+          description: settings.defaultSeoDescription,
+          slogan: settings.tagline,
+          url: siteUrl("/"),
+          logo: mediaAbsoluteUrl(settings.logo),
+          image: mediaAbsoluteUrl(settings.defaultOgImage ?? settings.logo),
+          telephone: mainPhone?.number,
+          email: settings.email ?? undefined,
+          address: settings.address
+            ? { "@type": "PostalAddress", addressLocality: settings.address, addressCountry: "AR" }
+            : undefined,
+          areaServed: settings.coverage ?? undefined,
+          sameAs: settings.socials.length ? settings.socials.map((s) => s.url) : undefined,
+        }}
+      />
     </>
   );
 }

@@ -116,6 +116,7 @@ export const pageContentSchemas = {
     formEyebrow: optText("Etiqueta del formulario", { max: 60 }),
     formTitle: text("Título del formulario", { max: 120 }),
     formText: longText("Texto del formulario"),
+    consentText: longText("Texto de consentimiento (casilla del formulario)", 300),
   }),
   about: z.object({
     ...header,
@@ -261,6 +262,7 @@ export const settingsSchema = z
       .nullable(),
     announcementEnabled: z.boolean(),
     footerText: optionalString(300),
+    whatsappMessage: z.string().trim().min(2, "Campo obligatorio").max(300),
     defaultSeoTitle: z
       .string()
       .trim()

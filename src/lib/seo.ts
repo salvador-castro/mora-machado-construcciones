@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/content/queries";
 import { mediaUrl, type MediaAsset } from "@/lib/media/types";
+import { siteUrl } from "@/lib/site-url";
 
-export function siteUrl(path = "/") {
-  const base = (process.env.SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  return `${base}${path}`;
-}
+export { siteUrl };
 
 /** Largest variant ≤ 1600px for OG (1200×630 is ideal; we keep aspect ratio). */
 function ogImage(media: MediaAsset) {
@@ -63,4 +61,9 @@ export async function pageMetadata({
     },
     robots: noindex ? { index: false, follow: false } : undefined,
   };
+}
+
+/** Absolute URL of the largest variant ≤ 1600px (for JSON-LD images). */
+export function mediaAbsoluteUrl(media: MediaAsset | null | undefined) {
+  return media ? ogImage(media)?.url : undefined;
 }

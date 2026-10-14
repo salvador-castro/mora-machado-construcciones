@@ -61,6 +61,7 @@ export function RichTextEditor({
         style: `min-height:${minHeight}px`,
         "aria-multiline": "true",
         role: "textbox",
+        ...(id ? { "aria-labelledby": `${id}-label` } : {}),
       },
     },
     onUpdate: ({ editor }) => onChange(editor.isEmpty ? "" : editor.getHTML()),

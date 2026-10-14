@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 
 type RevealProps = {
   children: React.ReactNode;
@@ -10,23 +10,36 @@ type RevealProps = {
   as?: "div" | "li" | "article";
 };
 
-/** Fade + rise on scroll into view. Renders statically with reduced motion. */
-export function Reveal({ children, className, delay = 0, as = "div" }: RevealProps) {
-  const reduce = useReducedMotion();
-  const Comp = motion[as];
+/**
+ * Fade + rise on scroll into view (CSS transition, see [data-reveal] in
+ * globals.css). Static with reduced motion; visible without JS via <noscript>.
+ */
+export function Reveal({ children, className, delay = 0, as: Comp = "div" }: RevealProps) {
+  const ref = useRef<HTMLElement>(null);
+  const [shown, setShown] = useState(false);
 
-  if (reduce) {
-    const Static = as;
-    return <Static className={className}>{children}</Static>;
-  }
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return setShown(true);
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
     <Comp
+      ref={ref as React.Ref<never>}
+      data-reveal={shown ? "in" : ""}
+      style={delay ? { transitionDelay: `${delay}s` } : undefined}
       className={className}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-      transition={{ duration: 0.6, ease: [0.2, 0.7, 0.2, 1], delay }}
     >
       {children}
     </Comp>

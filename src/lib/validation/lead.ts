@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Contact form schema — shared by the client form and the server action (F8). */
+/** Contact form schema, validated in the server action (kept out of the client bundle). */
 export const leadSchema = z.object({
   name: z.string().trim().min(2, "Ingresá tu nombre").max(120),
   phone: z
@@ -17,18 +17,3 @@ export const leadSchema = z.object({
 });
 
 export type LeadInput = z.infer<typeof leadSchema>;
-
-/** WhatsApp message body built from a lead (same format as the legacy site). */
-export function leadToWhatsAppText(lead: LeadInput) {
-  const lines = [
-    "Hola, quiero hacer una consulta.",
-    "",
-    `Nombre: ${lead.name}`,
-    `Teléfono: ${lead.phone}`,
-    lead.email ? `Email: ${lead.email}` : null,
-    lead.budgetRange ? `Presupuesto: ${lead.budgetRange}` : null,
-    "",
-    lead.message,
-  ];
-  return lines.filter((l) => l !== null).join("\n");
-}

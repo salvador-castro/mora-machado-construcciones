@@ -133,6 +133,7 @@ export function MediaUploader({
         <input
           ref={inputRef}
           type="file"
+          aria-label="Elegir imágenes para subir"
           accept={ACCEPT.join(",")}
           multiple
           className="sr-only"

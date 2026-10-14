@@ -31,7 +31,7 @@ export function ContactBlock({
         <dl className="divide-y divide-ink/16 border-y border-ink/16">
           {settings.phones.map((p) => (
             <div key={p.number} className="flex items-baseline justify-between gap-4 py-4">
-              <dt className="text-eyebrow text-ink/56">
+              <dt className="text-eyebrow text-ink/72">
                 {p.whatsapp && !/whatsapp/i.test(p.label) ? `${p.label} · WhatsApp` : p.label}
               </dt>
               <dd className="text-right">
@@ -48,7 +48,7 @@ export function ContactBlock({
           ))}
           {settings.email && (
             <div className="flex items-baseline justify-between gap-4 py-4">
-              <dt className="text-eyebrow text-ink/56">Email</dt>
+              <dt className="text-eyebrow text-ink/72">Email</dt>
               <dd>
                 <a href={`mailto:${settings.email}`} className="hover:underline">
                   {settings.email}
@@ -58,13 +58,13 @@ export function ContactBlock({
           )}
           {settings.address && (
             <div className="flex items-baseline justify-between gap-4 py-4">
-              <dt className="text-eyebrow text-ink/56">Ubicación</dt>
+              <dt className="text-eyebrow text-ink/72">Ubicación</dt>
               <dd className="text-right">{settings.address}</dd>
             </div>
           )}
           {settings.coverage && (
             <div className="flex items-baseline justify-between gap-4 py-4">
-              <dt className="text-eyebrow text-ink/56">Cobertura</dt>
+              <dt className="text-eyebrow text-ink/72">Cobertura</dt>
               <dd className="text-right">{settings.coverage}</dd>
             </div>
           )}
@@ -82,6 +82,7 @@ export function ContactBlock({
             budgetRanges={settings.budgetRanges}
             whatsappNumber={wa?.number ?? null}
             sourcePage={sourcePage}
+            consentText={content.consentText}
             turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || undefined}
           />
         </div>

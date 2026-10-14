@@ -118,7 +118,7 @@ export default async function ServicePage({ params }: PageProps<"/servicios/[slu
             <ul className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
               {service.whyItems.map((item, i) => (
                 <Reveal as="li" key={i} delay={i * 0.08} className="border-t border-ink/16 pt-6">
-                  <p className="text-eyebrow text-ink/48">{String(i + 1).padStart(2, "0")}</p>
+                  <p className="text-eyebrow text-ink/64">{String(i + 1).padStart(2, "0")}</p>
                   <h3 className="mt-6 text-h4">{item.title}</h3>
                   <p className="mt-2 text-ink/64">{item.description}</p>
                 </Reveal>

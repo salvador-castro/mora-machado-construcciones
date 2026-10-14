@@ -15,7 +15,7 @@ export function PostCard({ post }: { post: PostCardData }) {
           />
         )}
       </div>
-      <p className="mt-5 flex gap-3 text-eyebrow text-ink/56">
+      <p className="mt-5 flex gap-3 text-eyebrow text-ink/64">
         {post.category && <span>{post.category.name}</span>}
         {post.publishedAt && (
           <time dateTime={post.publishedAt.toISOString()}>{formatDate(post.publishedAt)}</time>

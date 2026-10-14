@@ -29,14 +29,14 @@ export function Intro({
               <Eyebrow>{content.eyebrow}</Eyebrow>
             </div>
           )}
-          <p className="text-h3 lg:col-span-9">{content.text}</p>
+          <h2 className="text-h3 lg:col-span-9">{content.text}</h2>
         </Reveal>
 
         {highlights.length > 0 && (
           <ul className="grid gap-x-8 gap-y-10 md:grid-cols-3">
             {highlights.map((h, i) => (
               <Reveal as="li" key={h.id} delay={i * 0.08} className="border-t border-ink/16 pt-6">
-                <p className="text-eyebrow text-ink/48">{h.number}</p>
+                <p className="text-eyebrow text-ink/64">{h.number}</p>
                 <h3 className="mt-6 text-h4">{h.title}</h3>
                 <p className="mt-2 text-ink/64">{h.description}</p>
               </Reveal>

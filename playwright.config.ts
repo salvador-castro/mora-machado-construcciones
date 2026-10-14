@@ -15,12 +15,16 @@ export default defineConfig({
     {
       name: "public",
       testMatch: /public\..*\.spec\.ts/,
-      use: { ...devices["Desktop Chrome"] },
+      use: { ...devices["Desktop Chrome"], contextOptions: { reducedMotion: "reduce" } },
     },
     {
       name: "public-mobile",
       testMatch: /public\..*\.spec\.ts/,
-      use: { ...devices["Pixel 7"], viewport: { width: 375, height: 812 } },
+      use: {
+        ...devices["Pixel 7"],
+        viewport: { width: 375, height: 812 },
+        contextOptions: { reducedMotion: "reduce" },
+      },
     },
     {
       name: "admin",

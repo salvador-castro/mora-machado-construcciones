@@ -21,9 +21,12 @@ export function ProcessSlider({ steps }: { steps: Step[] }) {
               aria-label={`${i + 1} de ${steps.length}`}
             >
               <div className="flex h-full min-h-80 flex-col justify-between border border-ink/16 bg-paper p-6 lg:min-h-96 lg:p-8">
-                <p className="text-h1 text-ink/16" aria-hidden>
-                  {String(i + 1).padStart(2, "0")}
-                </p>
+                {/* Decorative ordinal as CSS content: the list already numbers the steps. */}
+                <p
+                  className="text-h1 text-ink/16 before:content-[attr(data-n)]"
+                  data-n={String(i + 1).padStart(2, "0")}
+                  aria-hidden
+                />
                 <div>
                   <h3 className="text-h4">{step.title}</h3>
                   <p className="mt-3 text-ink/64">{step.description}</p>
