@@ -7,7 +7,15 @@ import { MenuOverlay } from "./menu-overlay";
 export function SiteHeader({ settings }: { settings: SiteSettingsData }) {
   const wa = primaryWhatsApp(settings.phones);
   const contact = [
-    ...(wa ? [{ label: "WhatsApp", value: wa.number, href: whatsappUrl(wa.number) }] : []),
+    ...(wa
+      ? [
+          {
+            label: "WhatsApp",
+            value: wa.number,
+            href: whatsappUrl(wa.number, settings.whatsappMessage),
+          },
+        ]
+      : []),
     ...settings.phones
       .filter((p) => p !== wa)
       .map((p) => ({ label: p.label, value: p.number, href: telHref(p.number) })),

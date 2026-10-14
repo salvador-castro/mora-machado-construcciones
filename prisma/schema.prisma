@@ -80,7 +80,7 @@ model SiteSettings {
   notificationEmails    String[] @default([])
   budgetRanges          String[] @default([])
   /// Prefilled text of the floating WhatsApp button
-  whatsappMessage       String   @default("Hola, quiero hacer una consulta sobre una obra.")
+  whatsappMessage       String   @default("Hola, les escribo desde la web. Quiero hacer una consulta sobre una obra.")
   /// Pending client confirmations shown as TODOs in the admin: [{ id, text, done }]
   pendingTodos          Json     @default("[]")
   updatedById           String?

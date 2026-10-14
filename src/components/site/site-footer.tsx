@@ -51,7 +51,11 @@ export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
               {settings.phones.map((p) => (
                 <li key={p.number}>
                   <a
-                    href={p.whatsapp ? whatsappUrl(p.number) : telHref(p.number)}
+                    href={
+                      p.whatsapp
+                        ? whatsappUrl(p.number, settings.whatsappMessage)
+                        : telHref(p.number)
+                    }
                     className="hover:underline"
                   >
                     {p.number}

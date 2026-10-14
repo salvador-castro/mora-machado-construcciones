@@ -10,7 +10,7 @@ export type LeadMessageFields = {
 /** WhatsApp message body built from a lead (same format as the legacy site). */
 export function leadToWhatsAppText(lead: LeadMessageFields) {
   const lines = [
-    "Hola, quiero hacer una consulta.",
+    "Hola, les escribo desde la web. Quiero hacer una consulta.",
     "",
     `Nombre: ${lead.name}`,
     `Teléfono: ${lead.phone}`,

@@ -51,3 +51,4 @@ next-env.d.ts
 /src/generated
 .claude/settings.local.json
 tests/e2e/.auth
+/deploy/README.pdf

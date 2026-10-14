@@ -29,6 +29,7 @@ pnpm db:cleanup          # borra sesiones y rate limits vencidos (cron diario en
 pnpm brand:build         # regenera logo/favicon WebP desde assets/brand/logo-original.png
 pnpm brand:import        # los sube a Medios y los asigna en Configuración si están vacíos
 pnpm test:e2e            # Playwright (projects: public, public-mobile, admin)
+pnpm docs:pdf            # genera deploy/README.pdf (no se versiona) desde deploy/README.md
 ```
 
 ## Entorno local
@@ -86,7 +87,7 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. La web nueva **no** s
 - Imágenes: variantes WebP pre-generadas con sharp (480/960/1600/2400) + `srcset` propio; sin optimizador de Next en el VPS.
 - Rate limiting en tabla Postgres (sin Redis).
 - Emails con Resend + React Email (decisión del cliente; reemplazó a SMTP/nodemailer). Resend solo envía: las casillas info@, sofia@ y rodo@ siguen en su proveedor y el MX raíz no se toca.
-- WhatsApp principal (confirmado por el cliente): 03487-656133 (= +54 9 3487 65-6133); 03487-514196 como teléfono. Email principal: info@moramachadoconstrucciones.com (público y destinatario de las consultas). Colores: se queda el acento actual por ahora.
+- WhatsApp principal (confirmado por el cliente): 03487-656133 (= +54 9 3487 65-6133); 03487-514196 solo como teléfono (sin WhatsApp: las consultas por WhatsApp van al principal). Email principal: info@moramachadoconstrucciones.com (público y destinatario de las consultas). Colores: se queda el acento actual por ahora. Todo link de WhatsApp del sitio lleva texto que dice que escriben **desde la web** (`SiteSettings.whatsappMessage` en header/footer/contacto/botón flotante; textos fijos en la página de servicio y tras enviar el formulario). Los emails de consultas no llevan copia a nadie.
 
 ## Fases
 

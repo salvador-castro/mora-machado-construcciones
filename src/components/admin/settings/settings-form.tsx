@@ -272,7 +272,7 @@ export function SettingsForm({
           <Field
             id="f-whatsappMessage"
             label="Mensaje del botón flotante de WhatsApp"
-            help="Texto que aparece escrito al abrir WhatsApp desde el botón verde."
+            help="Texto que aparece escrito al abrir WhatsApp desde el sitio (botón verde, encabezado, pie y contacto). Conviene que diga que escriben desde la web."
             required
             error={errors.whatsappMessage?.message}
           >

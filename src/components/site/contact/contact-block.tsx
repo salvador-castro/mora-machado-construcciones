@@ -36,7 +36,9 @@ export function ContactBlock({
               </dt>
               <dd className="text-right">
                 <a
-                  href={p.whatsapp ? whatsappUrl(p.number) : telHref(p.number)}
+                  href={
+                    p.whatsapp ? whatsappUrl(p.number, settings.whatsappMessage) : telHref(p.number)
+                  }
                   target={p.whatsapp ? "_blank" : undefined}
                   rel={p.whatsapp ? "noopener noreferrer" : undefined}
                   className="text-h4 hover:underline"

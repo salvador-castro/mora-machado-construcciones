@@ -22,6 +22,7 @@
     "create-admin": "tsx scripts/create-admin.ts",
     "brand:build": "tsx scripts/build-brand-assets.ts",
     "brand:import": "tsx scripts/import-brand.ts",
+    "docs:pdf": "tsx scripts/readme-pdf.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -69,6 +70,8 @@
     "dotenv": "^18.0.7",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "marked": "^18.1.1",
+    "marked-gfm-heading-id": "^4.1.4",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "prisma": "7.10.0",

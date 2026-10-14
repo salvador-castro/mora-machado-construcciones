@@ -91,7 +91,10 @@ export default async function ServicePage({ params }: PageProps<"/servicios/[slu
                   </ButtonLink>
                   {wa && (
                     <ButtonLink
-                      href={whatsappUrl(wa.number, `Hola, quiero consultar por ${service.title}.`)}
+                      href={whatsappUrl(
+                        wa.number,
+                        `Hola, les escribo desde la web. Quiero consultar por ${service.title}.`,
+                      )}
                       variant="secondary"
                       target="_blank"
                       rel="noopener noreferrer"
