@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Design tokens are defined in F2. */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
