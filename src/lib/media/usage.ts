@@ -63,7 +63,10 @@ export async function getMediaUsage(mediaId: string): Promise<MediaUsage> {
   const pages = await db.$queryRaw<{ key: string }[]>`
     SELECT "key" FROM "PageContent" WHERE "data"::text LIKE ${"%" + mediaId + "%"}`;
   for (const p of pages)
-    usage.push({ label: `Sección: ${p.key}`, href: `/admin/secciones/${p.key}` });
+    usage.push({
+      label: `Sección: ${pageContentLabels[p.key as PageContentKey] ?? p.key}`,
+      href: `/admin/secciones/${p.key}`,
+    });
 
   // Inline images in rich text.
   const stem = fileStem((media.variants as MediaVariant[])[0]?.path ?? media.path);
