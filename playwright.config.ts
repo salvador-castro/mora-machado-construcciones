@@ -9,7 +9,13 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
-  use: { baseURL, trace: "retain-on-failure", locale: "es-AR" },
+  use: {
+    baseURL,
+    trace: "retain-on-failure",
+    locale: "es-AR",
+    // For runs against a local Nginx with a self-signed certificate.
+    ignoreHTTPSErrors: process.env.E2E_IGNORE_HTTPS === "true",
+  },
   projects: [
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
@@ -37,6 +43,7 @@ export default defineConfig({
     command: "pnpm dev",
     url: baseURL,
     reuseExistingServer: true,
+    ignoreHTTPSErrors: process.env.E2E_IGNORE_HTTPS === "true",
     timeout: 120_000,
   },
 });

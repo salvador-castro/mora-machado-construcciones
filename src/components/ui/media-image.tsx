@@ -11,10 +11,19 @@ type MediaImageProps = {
   className?: string;
   /** Override media alt (e.g. decorative images → ""). */
   alt?: string;
+  /** Blur/tinted placeholder behind the image. Off for transparent images (logos). */
+  placeholder?: boolean;
 };
 
 /** Renders a library image with srcset from its WebP variants and a blur placeholder. */
-export function MediaImage({ media, sizes, priority, className, alt }: MediaImageProps) {
+export function MediaImage({
+  media,
+  sizes,
+  priority,
+  className,
+  alt,
+  placeholder = true,
+}: MediaImageProps) {
   const variants = media.variants.length
     ? media.variants
     : [{ width: media.width, height: media.height, path: "", size: 0 }];
@@ -31,8 +40,12 @@ export function MediaImage({ media, sizes, priority, className, alt }: MediaImag
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "auto"}
       decoding={priority ? "sync" : "async"}
-      className={cn("bg-ink/8 bg-cover bg-center", className)}
-      style={media.blurDataUrl ? { backgroundImage: `url(${media.blurDataUrl})` } : undefined}
+      className={cn(placeholder && "bg-ink/8 bg-cover bg-center", className)}
+      style={
+        placeholder && media.blurDataUrl
+          ? { backgroundImage: `url(${media.blurDataUrl})` }
+          : undefined
+      }
     />
   );
 }

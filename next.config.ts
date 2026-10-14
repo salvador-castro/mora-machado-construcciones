@@ -30,6 +30,8 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  // Nginx must not buffer: streaming (Suspense / partial prerendering) needs chunked responses.
+  { key: "X-Accel-Buffering", value: "no" },
   ...(isHttps && !isDev
     ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" }]
     : []),
@@ -43,6 +45,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  async redirects() {
+    // The legacy static site was a single index.html (may still be indexed/linked).
+    return [{ source: "/index.html", destination: "/", permanent: true }];
   },
   experimental: {
     // Media uploads go one file per action call (max 10 MB each, see lib/media/process.ts).

@@ -16,6 +16,7 @@ import {
   todosSchema,
   type PageContentKey,
 } from "@/lib/content/schemas";
+import { importBrandAssets } from "../scripts/import-brand";
 import { importLegacyImages, type LegacyMedia } from "../scripts/import-legacy-images";
 
 const db = createPrismaClient();
@@ -239,6 +240,7 @@ async function main() {
 
   const addedPages = await ensurePages(img);
   if (existing && !force) {
+    await importBrandAssets(db); // assigns logo/favicon only if still empty
     console.log(
       addedPages.length
         ? `Bloques de contenido agregados: ${addedPages.join(", ")}`
@@ -256,7 +258,6 @@ async function main() {
   const pendingTodos = todosSchema.parse(
     [
       "Confirmar cuál teléfono es el principal de WhatsApp (hoy: 03487-656133).",
-      "Logo definitivo (hoy es el monograma tipográfico «MM»).",
       "Elegir color de acento: lima (template) o terracota (marca actual).",
       "Email de contacto público y emails que reciben las notificaciones del formulario.",
       "Fotos adicionales en alta resolución (las actuales son de 1200 px), logos de clientes y testimonios reales.",
@@ -570,6 +571,9 @@ async function main() {
       },
     ],
   });
+
+  console.log("Importando logo e ícono…");
+  await importBrandAssets(db);
 
   const counts = {
     media: await db.media.count(),

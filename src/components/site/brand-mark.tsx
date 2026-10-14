@@ -29,26 +29,27 @@ export function BrandMark({
   return (
     <Link href="/" className={cn("inline-flex items-center gap-3", className)}>
       {logo ? (
+        // The mark is decorative here: the name is written next to it.
         <MediaImage
           media={logo}
-          alt={brandName}
-          sizes="160px"
-          className="h-8 w-auto bg-transparent"
+          alt=""
+          sizes="96px"
+          priority
+          placeholder={false}
+          className="h-9 w-auto"
         />
       ) : (
-        <>
-          <span
-            aria-hidden
-            className="inline-flex size-9 items-center justify-center bg-accent text-sm font-semibold tracking-tight text-accent-fg"
-          >
-            {initials(brandName)}
-          </span>
-          <span className="flex flex-col leading-tight">
-            <span className="text-[15px] font-medium tracking-tight">{brandName}</span>
-            {showTagline && tagline && <span className="text-xs text-current/88">{tagline}</span>}
-          </span>
-        </>
+        <span
+          aria-hidden
+          className="inline-flex size-9 items-center justify-center bg-accent text-sm font-semibold tracking-tight text-accent-fg"
+        >
+          {initials(brandName)}
+        </span>
       )}
+      <span className="flex flex-col leading-tight">
+        <span className="text-[15px] font-medium tracking-tight">{brandName}</span>
+        {showTagline && tagline && <span className="text-xs text-current/88">{tagline}</span>}
+      </span>
     </Link>
   );
 }

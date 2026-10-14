@@ -1,0 +1,9 @@
+# Install for the app user with:  crontab deploy/crontab   (merge if it already has entries)
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+APP_ROOT=/var/www/mora
+
+# 03:15 backup of database + uploads
+15 3 * * * $APP_ROOT/current/deploy/backup.sh >> $APP_ROOT/logs/backup.log 2>&1
+# 03:45 remove expired sessions and rate-limit windows
+45 3 * * * cd $APP_ROOT/current && pnpm -s db:cleanup >> $APP_ROOT/logs/cleanup.log 2>&1

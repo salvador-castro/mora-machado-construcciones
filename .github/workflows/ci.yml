@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mora
+          POSTGRES_PASSWORD: mora_ci
+          POSTGRES_DB: mora_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U mora" --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://mora:mora_ci@localhost:5432/mora_ci?schema=public
+      SITE_URL: http://localhost:3000
+      UPLOAD_DIR: ${{ github.workspace }}/.ci-uploads
+      AUTH_SECRET: ci-only-secret-0123456789abcdefghijklmnopqrstuvwxyz
+      IP_HASH_SALT: ci-only-salt
+      MAIL_FROM: Web <no-reply@example.com>
+      MAIL_TO_DEFAULT: ci@example.com
+      DEV_ADMIN_EMAIL: admin@ci.test
+      DEV_ADMIN_PASSWORD: ci-admin-password-123
+      ADMIN_PASSWORD: ci-admin-password-123
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the seed reads the legacy images from git history
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+
+      - name: Database
+        run: |
+          mkdir -p "$UPLOAD_DIR"
+          pnpm prisma migrate deploy
+          pnpm db:seed
+          pnpm create-admin --email "$DEV_ADMIN_EMAIL" --name "Admin CI"
+
+      - run: pnpm build
+
+      - name: Start production server
+        run: |
+          cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
+          (cd .next/standalone && PORT=3000 HOSTNAME=127.0.0.1 NODE_ENV=production node server.js > ../../server.log 2>&1 &)
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:3000/healthz && break; sleep 2; done
+
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+        env:
+          CI: "true"
+
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            test-results
+            server.log
+          retention-days: 7

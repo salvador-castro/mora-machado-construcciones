@@ -17,8 +17,11 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:check": "tsx scripts/db-check.ts",
+    "db:cleanup": "tsx scripts/cleanup.ts",
     "media:import-legacy": "tsx scripts/import-legacy-images.ts",
     "create-admin": "tsx scripts/create-admin.ts",
+    "brand:build": "tsx scripts/build-brand-assets.ts",
+    "brand:import": "tsx scripts/import-brand.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
