@@ -1,7 +1,8 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Mora Machado Construcciones — data model.
+// Conventions:
+//  - Listable entities have `order` (drag & drop) and `published` (hide without deleting).
+//  - Rich text (`content`) is sanitized HTML produced by the admin editor.
+//  - Media references use onDelete: Restrict so in-use files can't be deleted.
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +11,358 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Auth ──────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(EDITOR)
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions      Session[]
+  posts         BlogPost[]
+  auditLogs     AuditLog[]
+  pageEdits     PageContent[]
+  settingsEdits SiteSettings[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── Site-wide ─────────────────────────────────────────────────
+
+/// Singleton row (id = 1).
+model SiteSettings {
+  id                    Int      @id @default(1)
+  brandName             String
+  tagline               String
+  logoId                String?
+  logo                  Media?   @relation("SettingsLogo", fields: [logoId], references: [id], onDelete: Restrict)
+  faviconId             String?
+  favicon               Media?   @relation("SettingsFavicon", fields: [faviconId], references: [id], onDelete: Restrict)
+  accentColor           String   @default("#E8FD53")
+  /// [{ label, number, whatsapp, primary }] — see src/lib/content/schemas.ts
+  phones                Json     @default("[]")
+  email                 String?
+  address               String?
+  coverage              String?
+  mapEmbedUrl           String?
+  /// [{ network, url }]
+  socials               Json     @default("[]")
+  announcementText      String?
+  announcementUrl       String?
+  announcementEnabled   Boolean  @default(false)
+  footerText            String?
+  defaultSeoTitle       String
+  defaultSeoDescription String
+  defaultOgImageId      String?
+  defaultOgImage        Media?   @relation("SettingsOgImage", fields: [defaultOgImageId], references: [id], onDelete: Restrict)
+  notificationEmails    String[] @default([])
+  budgetRanges          String[] @default([])
+  /// Pending client confirmations shown as TODOs in the admin: [{ id, text, done }]
+  pendingTodos          Json     @default("[]")
+  updatedById           String?
+  updatedBy             User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt             DateTime @updatedAt
+}
+
+/// Editable content blocks keyed by section (e.g. "home.hero").
+/// `data` is validated by a per-key zod schema (src/lib/content/schemas.ts).
+model PageContent {
+  key         String   @id
+  data        Json
+  published   Boolean  @default(true)
+  updatedById String?
+  updatedBy   User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Media ─────────────────────────────────────────────────────
+
+model Media {
+  id           String   @id @default(cuid())
+  /// Path relative to UPLOAD_DIR of the largest WebP variant.
+  path         String
+  originalName String
+  mime         String
+  size         Int
+  width        Int
+  height       Int
+  alt          String
+  /// [{ width, height, path, size }] sorted by width ascending.
+  variants     Json     @default("[]")
+  /// Tiny base64 blur placeholder.
+  blurDataUrl  String?
+  createdAt    DateTime @default(now())
+
+  settingsLogos    SiteSettings[] @relation("SettingsLogo")
+  settingsFavicons SiteSettings[] @relation("SettingsFavicon")
+  settingsOg       SiteSettings[] @relation("SettingsOgImage")
+  serviceCovers    Service[]
+  projectCovers    Project[]
+  projectImages    ProjectImage[]
+  clientLogos      ClientLogo[]
+  galleryImages    GalleryImage[]
+  postCovers       BlogPost[]
+  testimonials     Testimonial[]
+}
+
+// ─── Services & projects ───────────────────────────────────────
+
+model Service {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  order            Int       @default(0)
+  title            String
+  shortDescription String
+  content          String    @default("")
+  /// lucide-react icon name
+  icon             String?
+  coverId          String?
+  cover            Media?    @relation(fields: [coverId], references: [id], onDelete: Restrict)
+  /// [{ title, description }] — "Por qué elegirnos" (4 items)
+  whyItems         Json      @default("[]")
+  /// [{ title, description }] — service stages
+  steps            Json      @default("[]")
+  published        Boolean   @default(true)
+  seoTitle         String?
+  seoDescription   String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  projects         Project[]
+
+  @@index([published, order])
+}
+
+model ProjectCategory {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  name     String
+  order    Int       @default(0)
+  projects Project[]
+}
+
+model Project {
+  id             String          @id @default(cuid())
+  slug           String          @unique
+  title          String
+  categoryId     String
+  category       ProjectCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  serviceId      String?
+  service        Service?        @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  location       String
+  year           Int?
+  area           String?
+  excerpt        String
+  content        String          @default("")
+  coverId        String?
+  cover          Media?          @relation(fields: [coverId], references: [id], onDelete: Restrict)
+  featured       Boolean         @default(false)
+  featuredOrder  Int?
+  order          Int             @default(0)
+  published      Boolean         @default(true)
+  publishedAt    DateTime?
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  images         ProjectImage[]
+  testimonials   Testimonial[]
+
+  @@index([published, order])
+  @@index([featured, featuredOrder])
+}
+
+model ProjectImage {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     Media   @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  caption   String?
+  order     Int     @default(0)
+
+  @@index([projectId, order])
+}
+
+// ─── Home blocks ───────────────────────────────────────────────
+
+model ProcessStep {
+  id          String  @id @default(cuid())
+  order       Int     @default(0)
+  title       String
+  description String
+  published   Boolean @default(true)
+}
+
+/// "Diferenciales"
+model ValueItem {
+  id          String  @id @default(cuid())
+  order       Int     @default(0)
+  title       String
+  description String
+  /// lucide-react icon name
+  icon        String
+  published   Boolean @default(true)
+}
+
+model Highlight {
+  id          String  @id @default(cuid())
+  order       Int     @default(0)
+  number      String
+  title       String
+  description String
+  published   Boolean @default(true)
+}
+
+model MarqueeItem {
+  id        String  @id @default(cuid())
+  order     Int     @default(0)
+  text      String
+  published Boolean @default(true)
+}
+
+model ClientLogo {
+  id        String  @id @default(cuid())
+  order     Int     @default(0)
+  name      String
+  mediaId   String
+  media     Media   @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  url       String?
+  published Boolean @default(true)
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  order     Int      @default(0)
+  quote     String
+  author    String
+  role      String?
+  photoId   String?
+  photo     Media?   @relation(fields: [photoId], references: [id], onDelete: Restrict)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  featured  Boolean  @default(false)
+  published Boolean  @default(true)
+}
+
+model GalleryImage {
+  id        String  @id @default(cuid())
+  order     Int     @default(0)
+  mediaId   String
+  media     Media   @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  caption   String?
+  /// Masonry hint: "normal" | "tall" | "wide"
+  shape     String  @default("normal")
+  published Boolean @default(true)
+}
+
+// ─── Blog ──────────────────────────────────────────────────────
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model BlogCategory {
+  id    String     @id @default(cuid())
+  slug  String     @unique
+  name  String
+  order Int        @default(0)
+  posts BlogPost[]
+}
+
+model BlogPost {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  excerpt        String
+  content        String        @default("")
+  coverId        String?
+  cover          Media?        @relation(fields: [coverId], references: [id], onDelete: Restrict)
+  categoryId     String?
+  category       BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  authorId       String?
+  author         User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  status         PostStatus    @default(DRAFT)
+  publishedAt    DateTime?
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+}
+
+// ─── Leads ─────────────────────────────────────────────────────
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUOTED
+  WON
+  LOST
+  SPAM
+}
+
+model Lead {
+  id          String     @id @default(cuid())
+  name        String
+  phone       String
+  email       String?
+  budgetRange String?
+  message     String
+  sourcePage  String
+  consent     Boolean
+  status      LeadStatus @default(NEW)
+  notes       String?
+  /// SHA-256 of IP + IP_HASH_SALT (never store raw IPs).
+  ipHash      String?
+  userAgent   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([status, createdAt])
+}
+
+// ─── Infra ─────────────────────────────────────────────────────
+
+/// Fixed-window rate limiting (login, contact form).
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
 }

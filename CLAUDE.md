@@ -20,7 +20,8 @@ pnpm dev                 # http://localhost:3000
 pnpm build && pnpm start
 pnpm lint | pnpm typecheck | pnpm format
 pnpm db:migrate          # prisma migrate dev
-pnpm db:seed             # contenido inicial
+pnpm db:seed             # contenido inicial (solo en DB vacía; `pnpm prisma db seed -- --force` reinicia contenido, conserva users y leads)
+pnpm media:import-legacy # importa las 11 fotos del sitio viejo (desde git 39b8b90 o el sitio en vivo)
 pnpm db:studio
 pnpm db:check            # verifica conexión a Postgres
 ```
@@ -37,6 +38,9 @@ pnpm db:check            # verifica conexión a Postgres
 - Server actions en `src/server/actions/*`, siempre `requireRole()` + validación zod.
 - Contenido de secciones en `PageContent` (key → JSON) validado por un schema zod por key (`src/lib/content/schemas.ts`); el admin genera el formulario desde ese schema.
 - Entidades listables tienen `order` (drag & drop) y `published`.
+- Imágenes: `src/lib/media/process.ts` (sharp, valida formato real, variantes WebP en `UPLOAD_DIR/yyyy/mm/<uuid>-<w>.webp`, sin upscaling). Media referenciada desde JSON de `PageContent` (`*Id`) no tiene FK: el chequeo de uso debe escanear esos JSON.
+- Scripts CLI importan `@/lib/db-client` (no `@/lib/db`, que es `server-only`).
+- Texto marcado `// DRAFT` en `prisma/seed.ts` fue redactado por nosotros; pendiente de revisión del cliente (ver `SiteSettings.pendingTodos`).
 - HTML de editor rico siempre sanitizado antes de renderizar.
 - Commit por fase en `develop`. `main` conserva el sitio estático viejo (HTML + 11 imágenes en `public/img/`) hasta el lanzamiento.
 
@@ -55,4 +59,4 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`outpu
 
 ## Fases
 
-F1 setup ✅ · F2 design system · F3 schema + seed · F4 home · F5 páginas internas · F6 auth + admin layout · F7 CRUDs/medios/settings · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
+F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home · F5 páginas internas · F6 auth + admin layout · F7 CRUDs/medios/settings · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
