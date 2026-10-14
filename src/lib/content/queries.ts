@@ -6,6 +6,7 @@ import {
   pageContentSchemas,
   phonesSchema,
   socialsSchema,
+  titledItemsSchema,
   type PageContentData,
   type PageContentKey,
 } from "./schemas";
@@ -188,3 +189,182 @@ export async function getFeaturedProjects() {
 }
 
 export type ProjectCardData = Awaited<ReturnType<typeof getFeaturedProjects>>[number];
+
+const titledItems = titledItemsSchema.catch([]);
+
+function withCover<T extends { cover: Parameters<typeof toMediaAsset>[0] | null }>(p: T) {
+  return { ...p, cover: p.cover ? toMediaAsset(p.cover) : null };
+}
+
+export async function getServiceSlugs() {
+  "use cache";
+  cached(TAGS.services);
+  const rows = await db.service.findMany({ where: { published: true }, select: { slug: true } });
+  return rows.map((r) => r.slug);
+}
+
+export async function getServiceBySlug(slug: string) {
+  "use cache";
+  cached(TAGS.services, TAGS.projects, TAGS.categories, TAGS.media);
+  const s = await db.service.findFirst({
+    where: { slug, published: true },
+    include: {
+      cover: { select: mediaAssetSelect },
+      projects: {
+        where: { published: true },
+        orderBy: { order: "asc" },
+        take: 4,
+        select: projectCardSelect,
+      },
+    },
+  });
+  if (!s) return null;
+  return {
+    ...s,
+    cover: s.cover ? toMediaAsset(s.cover) : null,
+    whyItems: titledItems.parse(s.whyItems),
+    steps: titledItems.parse(s.steps),
+    projects: s.projects.map(withCover),
+  };
+}
+
+// ─── Projects (listing + detail) ───────────────────────────────
+
+export async function getProjects() {
+  "use cache";
+  cached(TAGS.projects, TAGS.categories, TAGS.services, TAGS.media);
+  const projects = await db.project.findMany({
+    where: { published: true },
+    orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+    select: projectCardSelect,
+  });
+  return projects.map(withCover);
+}
+
+/** Categories that have at least one published project. */
+export async function getProjectCategories() {
+  "use cache";
+  cached(TAGS.categories, TAGS.projects);
+  return db.projectCategory.findMany({
+    where: { projects: { some: { published: true } } },
+    orderBy: { order: "asc" },
+    select: { id: true, slug: true, name: true },
+  });
+}
+
+export async function getProjectSlugs() {
+  "use cache";
+  cached(TAGS.projects);
+  const rows = await db.project.findMany({ where: { published: true }, select: { slug: true } });
+  return rows.map((r) => r.slug);
+}
+
+export async function getProjectBySlug(slug: string) {
+  "use cache";
+  cached(TAGS.projects, TAGS.categories, TAGS.services, TAGS.testimonials, TAGS.media);
+  const p = await db.project.findFirst({
+    where: { slug, published: true },
+    include: {
+      category: { select: { id: true, name: true, slug: true } },
+      service: { select: { id: true, title: true, slug: true } },
+      cover: { select: mediaAssetSelect },
+      images: {
+        orderBy: { order: "asc" },
+        select: { id: true, caption: true, media: { select: mediaAssetSelect } },
+      },
+      testimonials: {
+        where: { published: true },
+        orderBy: { order: "asc" },
+        take: 1,
+        select: { quote: true, author: true, role: true },
+      },
+    },
+  });
+  if (!p) return null;
+
+  const related = await db.project.findMany({
+    where: {
+      published: true,
+      id: { not: p.id },
+      OR: [{ categoryId: p.categoryId }, ...(p.serviceId ? [{ serviceId: p.serviceId }] : [])],
+    },
+    orderBy: { order: "asc" },
+    take: 2,
+    select: projectCardSelect,
+  });
+
+  return {
+    ...p,
+    cover: p.cover ? toMediaAsset(p.cover) : null,
+    images: p.images.map((i) => ({ id: i.id, caption: i.caption, media: toMediaAsset(i.media) })),
+    testimonial: p.testimonials[0] ?? null,
+    related: related.map(withCover),
+  };
+}
+
+// ─── Blog ──────────────────────────────────────────────────────
+
+const postCardSelect = {
+  id: true,
+  slug: true,
+  title: true,
+  excerpt: true,
+  publishedAt: true,
+  category: { select: { name: true, slug: true } },
+  cover: { select: mediaAssetSelect },
+} as const;
+
+export async function getPosts() {
+  "use cache";
+  cached(TAGS.blog, TAGS.media);
+  const posts = await db.blogPost.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { publishedAt: "desc" },
+    select: postCardSelect,
+  });
+  return posts.map(withCover);
+}
+
+export type PostCardData = Awaited<ReturnType<typeof getPosts>>[number];
+
+export async function getPostSlugs() {
+  "use cache";
+  cached(TAGS.blog);
+  const rows = await db.blogPost.findMany({
+    where: { status: "PUBLISHED" },
+    select: { slug: true },
+  });
+  return rows.map((r) => r.slug);
+}
+
+/** `preview` includes drafts (draft mode, F7). */
+export async function getPostBySlug(slug: string, preview = false) {
+  "use cache";
+  cached(TAGS.blog, TAGS.media);
+  const post = await db.blogPost.findFirst({
+    where: { slug, ...(preview ? {} : { status: "PUBLISHED" }) },
+    include: {
+      cover: { select: mediaAssetSelect },
+      category: { select: { id: true, name: true, slug: true } },
+      author: { select: { name: true } },
+    },
+  });
+  if (!post) return null;
+
+  const related = await db.blogPost.findMany({
+    where: {
+      status: "PUBLISHED",
+      id: { not: post.id },
+      ...(post.categoryId ? { categoryId: post.categoryId } : {}),
+    },
+    orderBy: { publishedAt: "desc" },
+    take: 3,
+    select: postCardSelect,
+  });
+
+  return {
+    ...post,
+    cover: post.cover ? toMediaAsset(post.cover) : null,
+    related: related.map(withCover),
+  };
+}

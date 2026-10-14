@@ -16,7 +16,7 @@ import {
   todosSchema,
   type PageContentKey,
 } from "@/lib/content/schemas";
-import { importLegacyImages } from "../scripts/import-legacy-images";
+import { importLegacyImages, type LegacyMedia } from "../scripts/import-legacy-images";
 
 const db = createPrismaClient();
 const force = process.argv.includes("--force");
@@ -46,74 +46,8 @@ async function wipeContent() {
   await removeMediaFiles(media.flatMap((m) => (m.variants as MediaVariant[]).map((v) => v.path)));
 }
 
-async function main() {
-  const existing = await db.siteSettings.findUnique({ where: { id: 1 } });
-  if (existing && !force) {
-    console.log("La base ya tiene contenido. Usá `pnpm db:seed --force` para reiniciarlo.");
-    return;
-  }
-  if (force) {
-    console.log("Borrando contenido existente…");
-    await wipeContent();
-  }
-
-  console.log("Importando imágenes del sitio anterior…");
-  const img = await importLegacyImages(db);
-
-  // ── Settings ────────────────────────────────────────────────
-  const phones = phonesSchema.parse([
-    { label: "WhatsApp", number: "03487-656133", whatsapp: true, primary: true },
-    { label: "Teléfono", number: "03487-514196", whatsapp: true, primary: false },
-  ]);
-
-  const pendingTodos = todosSchema.parse(
-    [
-      "Confirmar cuál teléfono es el principal de WhatsApp (hoy: 03487-656133).",
-      "Logo definitivo (hoy es el monograma tipográfico «MM»).",
-      "Elegir color de acento: lima (template) o terracota (marca actual).",
-      "Email de contacto público y emails que reciben las notificaciones del formulario.",
-      "Fotos adicionales en alta resolución (las actuales son de 1200 px), logos de clientes y testimonios reales.",
-      "Revisar textos redactados: intro de inicio, Nosotros, detalle de servicios, blog y política de privacidad.",
-      "Confirmar rangos de presupuesto del formulario.",
-      "Mejorar los textos alternativos de las fotos de galería (hoy «Detalle de obra»).",
-    ].map((text, i) => ({ id: `todo-${i + 1}`, text, done: false })),
-  );
-
-  await db.siteSettings.create({
-    data: {
-      id: 1,
-      brandName: "Mora Machado Construcciones",
-      tagline: "Obras civiles · reformas · construcción",
-      accentColor: "#E8FD53",
-      phones,
-      email: null,
-      address: "Zárate, Buenos Aires, Argentina",
-      coverage: "Otras ciudades y provincias a evaluar",
-      mapEmbedUrl:
-        "https://www.google.com/maps?q=Z%C3%A1rate,+Buenos+Aires,+Argentina&output=embed",
-      socials: [],
-      announcementText: "Agenda abierta para obras 2027 — consultá disponibilidad",
-      announcementUrl: "#contacto",
-      announcementEnabled: false,
-      footerText: "Soluciones de obra con compromiso, cercanía y ejecución real.",
-      defaultSeoTitle:
-        "Mora Machado Construcciones | Obras civiles, reformas y construcción en Zárate",
-      defaultSeoDescription:
-        "Empresa familiar de Zárate. Construcciones nuevas, reformas, obras civiles, terminaciones exteriores y espacios deportivos.",
-      defaultOgImageId: img.pool.id,
-      notificationEmails: [],
-      budgetRanges: [
-        "Todavía no lo sé",
-        "Hasta $10 millones",
-        "$10 a $30 millones",
-        "$30 a $80 millones",
-        "Más de $80 millones",
-      ],
-      pendingTodos,
-    },
-  });
-
-  // ── Page content (validated per key) ────────────────────────
+/** Default content for every PageContent key (validated per key). */
+function buildPages(img: LegacyMedia) {
   const pages: { [K in PageContentKey]: unknown } = {
     "home.hero": {
       eyebrow: "Empresa familiar de Zárate",
@@ -228,6 +162,16 @@ async function main() {
       title: "Notas de obra.",
       subtitle: "Consejos prácticos para planificar, construir y mantener tus espacios.",
     },
+    details: {
+      serviceWhyEyebrow: "Por qué elegirnos",
+      serviceWhyTitle: "Una obra bien hecha empieza por cómo se trabaja.",
+      serviceStepsEyebrow: "Etapas",
+      serviceStepsTitle: "Cómo lo hacemos.",
+      serviceAsideText: "Contanos tu proyecto y te orientamos con una respuesta clara.",
+      projectGalleryTitle: "Avance y detalles.",
+      projectRelatedTitle: "Otras obras.",
+      blogRelatedTitle: "Notas relacionadas.",
+    },
     // DRAFT — reviewed by the client before publishing.
     "legal.privacy": {
       title: "Política de privacidad",
@@ -246,9 +190,94 @@ async function main() {
     },
   };
 
-  for (const [key, data] of Object.entries(pages) as [PageContentKey, unknown][]) {
-    await db.pageContent.create({ data: { key, data: pageContentSchemas[key].parse(data) } });
+  return pages;
+}
+
+/** Creates missing PageContent rows; never overwrites client edits. */
+async function ensurePages(img: LegacyMedia) {
+  const pages = buildPages(img);
+  const existing = new Set(
+    (await db.pageContent.findMany({ select: { key: true } })).map((r) => r.key),
+  );
+  const missing = (Object.keys(pages) as PageContentKey[]).filter((k) => !existing.has(k));
+  for (const key of missing) {
+    await db.pageContent.create({ data: { key, data: pageContentSchemas[key].parse(pages[key]) } });
   }
+  return missing;
+}
+
+async function main() {
+  const existing = await db.siteSettings.findUnique({ where: { id: 1 } });
+  if (force) {
+    console.log("Borrando contenido existente…");
+    await wipeContent();
+  }
+
+  console.log("Importando imágenes del sitio anterior…");
+  const img = await importLegacyImages(db);
+
+  const addedPages = await ensurePages(img);
+  if (existing && !force) {
+    console.log(
+      addedPages.length
+        ? `Bloques de contenido agregados: ${addedPages.join(", ")}`
+        : "La base ya tiene contenido. Usá `pnpm db:seed --force` para reiniciarlo.",
+    );
+    return;
+  }
+
+  // ── Settings ────────────────────────────────────────────────
+  const phones = phonesSchema.parse([
+    { label: "WhatsApp", number: "03487-656133", whatsapp: true, primary: true },
+    { label: "Teléfono", number: "03487-514196", whatsapp: true, primary: false },
+  ]);
+
+  const pendingTodos = todosSchema.parse(
+    [
+      "Confirmar cuál teléfono es el principal de WhatsApp (hoy: 03487-656133).",
+      "Logo definitivo (hoy es el monograma tipográfico «MM»).",
+      "Elegir color de acento: lima (template) o terracota (marca actual).",
+      "Email de contacto público y emails que reciben las notificaciones del formulario.",
+      "Fotos adicionales en alta resolución (las actuales son de 1200 px), logos de clientes y testimonios reales.",
+      "Revisar textos redactados: intro de inicio, Nosotros, detalle de servicios, blog y política de privacidad.",
+      "Confirmar rangos de presupuesto del formulario.",
+      "Mejorar los textos alternativos de las fotos de galería (hoy «Detalle de obra»).",
+    ].map((text, i) => ({ id: `todo-${i + 1}`, text, done: false })),
+  );
+
+  await db.siteSettings.create({
+    data: {
+      id: 1,
+      brandName: "Mora Machado Construcciones",
+      tagline: "Obras civiles · reformas · construcción",
+      accentColor: "#E8FD53",
+      phones,
+      email: null,
+      address: "Zárate, Buenos Aires, Argentina",
+      coverage: "Otras ciudades y provincias a evaluar",
+      mapEmbedUrl:
+        "https://www.google.com/maps?q=Z%C3%A1rate,+Buenos+Aires,+Argentina&output=embed",
+      socials: [],
+      announcementText: "Agenda abierta para obras 2027 — consultá disponibilidad",
+      announcementUrl: "#contacto",
+      announcementEnabled: false,
+      footerText: "Soluciones de obra con compromiso, cercanía y ejecución real.",
+      defaultSeoTitle:
+        "Mora Machado Construcciones | Obras civiles, reformas y construcción en Zárate",
+      defaultSeoDescription:
+        "Empresa familiar de Zárate. Construcciones nuevas, reformas, obras civiles, terminaciones exteriores y espacios deportivos.",
+      defaultOgImageId: img.pool.id,
+      notificationEmails: [],
+      budgetRanges: [
+        "Todavía no lo sé",
+        "Hasta $10 millones",
+        "$10 a $30 millones",
+        "$30 a $80 millones",
+        "Más de $80 millones",
+      ],
+      pendingTodos,
+    },
+  });
 
   // ── Home lists ──────────────────────────────────────────────
   await db.highlight.createMany({

@@ -37,6 +37,9 @@ pnpm db:check            # verifica conexión a Postgres
 - Lecturas públicas en `src/lib/content/queries.ts` con `'use cache'` + `cacheLife("max")` + `cacheTag` (tags en `src/lib/content/tags.ts`). Las server actions del admin llaman `updateTag(tag)` (read-your-writes inmediato). Todo lo que embebe media lleva también `TAGS.media`.
 - Imágenes públicas: `<MediaImage>` (srcset desde variantes). `/uploads/*` lo sirve Nginx en prod y `src/app/uploads/[...path]/route.ts` en dev.
 - No usar `new Date()`/`Math.random()` en render: Next 16 lo prohíbe en el shell estático (ver `CurrentYear`, cacheado con `cacheLife("days")`).
+- Rutas `[slug]`: `generateStaticParams` debe devolver ≥1 param (si no hay, `{ slug: "_" }` → 404). Se hace `await params` + `notFound()` antes de cualquier Suspense para tener 404 real, por eso `export const instant = false`.
+- Rich text: `<RichText>` sanitiza con `src/lib/sanitize.ts` (solo imágenes de `/uploads/`). Estilos en `.rich-text` (globals.css).
+- Textos de títulos de secciones en páginas de detalle: `PageContent` key `details`. `pnpm db:seed` sin `--force` crea las keys de `PageContent` que falten (sin pisar ediciones).
 - El hero no usa `<Reveal>` (es el LCP; debe pintarse sin JS).
 - Al revisar en Chrome automatizado la pestaña está `hidden`: smooth scroll y animaciones no avanzan — no es un bug.
 - Server actions en `src/server/actions/*`, siempre `requireRole()` + validación zod.
@@ -63,4 +66,4 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`outpu
 
 ## Fases
 
-F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas · F6 auth + admin layout · F7 CRUDs/medios/settings · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
+F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout · F7 CRUDs/medios/settings · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy

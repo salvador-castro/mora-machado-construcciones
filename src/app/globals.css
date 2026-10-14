@@ -203,3 +203,64 @@
     animation: none;
   }
 }
+
+/* ── Rich text (admin-authored HTML) ────────────────────────── */
+@layer components {
+  .rich-text {
+    max-width: 68ch;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: color-mix(in srgb, currentColor 88%, transparent);
+  }
+  .rich-text > * + * {
+    margin-top: 1.1em;
+  }
+  .rich-text :is(h2, h3, h4) {
+    color: currentColor;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-top: 2em;
+  }
+  .rich-text h2 {
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  }
+  .rich-text h3 {
+    font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+  }
+  .rich-text :is(ul, ol) {
+    padding-left: 1.25em;
+  }
+  .rich-text ul {
+    list-style: square;
+  }
+  .rich-text ol {
+    list-style: decimal;
+  }
+  .rich-text li + li {
+    margin-top: 0.4em;
+  }
+  .rich-text a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .rich-text blockquote {
+    border-left: 2px solid var(--accent);
+    padding-left: 1.25em;
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+  .rich-text hr {
+    border-color: color-mix(in srgb, currentColor 16%, transparent);
+    margin-block: 2.5em;
+  }
+  .rich-text img {
+    width: 100%;
+    height: auto;
+  }
+  .rich-text figcaption {
+    margin-top: 0.5em;
+    font-size: 0.875rem;
+    color: color-mix(in srgb, currentColor 64%, transparent);
+  }
+}

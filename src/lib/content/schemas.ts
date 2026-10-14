@@ -129,6 +129,16 @@ export const pageContentSchemas = {
   "services.index": z.object({ ...header }),
   "projects.index": z.object({ ...header }),
   "blog.index": z.object({ ...header }),
+  details: z.object({
+    serviceWhyEyebrow: optText("Servicio · etiqueta «por qué»", { max: 60 }),
+    serviceWhyTitle: text("Servicio · título «por qué elegirnos»", { max: 160 }),
+    serviceStepsEyebrow: optText("Servicio · etiqueta etapas", { max: 60 }),
+    serviceStepsTitle: text("Servicio · título etapas", { max: 160 }),
+    serviceAsideText: longText("Servicio · texto de la caja de contacto", 300),
+    projectGalleryTitle: text("Obra · título de galería", { max: 160 }),
+    projectRelatedTitle: text("Obra · título de obras relacionadas", { max: 160 }),
+    blogRelatedTitle: text("Blog · título de notas relacionadas", { max: 160 }),
+  }),
   "legal.privacy": z.object({
     title: text("Título", { max: 120 }),
     body: richText("Contenido"),
@@ -158,6 +168,7 @@ export const pageContentLabels: Record<PageContentKey, string> = {
   "services.index": "Listado de servicios",
   "projects.index": "Listado de obras",
   "blog.index": "Listado del blog",
+  details: "Textos de páginas de detalle",
   "legal.privacy": "Política de privacidad",
 };
 
