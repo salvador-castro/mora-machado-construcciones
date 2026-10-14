@@ -1,6 +1,205 @@
 @import "tailwindcss";
 
-/* Design tokens are defined in F2. */
-body {
-  font-family: Arial, Helvetica, sans-serif;
+/* ─────────────────────────────────────────────────────────────
+   Design tokens — see DESIGN.md.
+   --accent is overridden at runtime from SiteSettings.accentColor.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --ink: #111a0d;
+  --paper: #f4f3f0;
+  --paper-2: #f4f3ea;
+  --sand: #cfc9be;
+  --stone: #5e5a53;
+  --accent: #e8fd53;
+  /* Text on accent; computed at runtime (ink or paper, whichever contrasts more). */
+  --accent-fg: var(--ink);
+  --whatsapp: #25d366;
+
+  /* Contextual tokens, redefined per section tone (see .tone-*). */
+  --fg: var(--ink);
+  --bg: var(--paper);
+  --focus: var(--ink);
+  /* Emphasized fragment inside headings. */
+  --highlight: color-mix(in srgb, var(--ink) 48%, transparent);
+
+  --header-h: 56px;
+  --announcement-h: 0px;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-sand: var(--sand);
+  --color-stone: var(--stone);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-whatsapp: var(--whatsapp);
+  --color-fg: var(--fg);
+  --color-highlight: var(--highlight);
+  --color-bg: var(--bg);
+
+  --font-sans: var(--font-aspekta), "Inter Tight", Arial, sans-serif;
+
+  --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 90rem;
+}
+
+@theme {
+  --ease-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* ── Base ───────────────────────────────────────────────────── */
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: calc(var(--header-h) + 16px);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-feature-settings: "ss01";
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+/* ── Section tones ──────────────────────────────────────────── */
+@utility tone-dark {
+  --fg: var(--paper);
+  --bg: var(--ink);
+  --focus: var(--accent);
+  --highlight: var(--accent);
+  background-color: var(--ink);
+  color: var(--paper);
+}
+@utility tone-light {
+  --fg: var(--ink);
+  --bg: var(--paper);
+  --focus: var(--ink);
+  --highlight: color-mix(in srgb, var(--ink) 48%, transparent);
+  background-color: var(--paper);
+  color: var(--ink);
+}
+@utility tone-light-2 {
+  --fg: var(--ink);
+  --bg: var(--paper-2);
+  --focus: var(--ink);
+  --highlight: color-mix(in srgb, var(--ink) 48%, transparent);
+  background-color: var(--paper-2);
+  color: var(--ink);
+}
+@utility tone-sand {
+  --fg: var(--ink);
+  --bg: var(--sand);
+  --focus: var(--ink);
+  --highlight: color-mix(in srgb, var(--ink) 48%, transparent);
+  background-color: var(--sand);
+  color: var(--ink);
+}
+@utility tone-stone {
+  --fg: var(--paper);
+  --bg: var(--stone);
+  --focus: var(--accent);
+  --highlight: color-mix(in srgb, var(--paper) 64%, transparent);
+  background-color: var(--stone);
+  color: var(--paper);
+}
+
+/* ── Typography scale (fluid: 375px → ~1360px) ──────────────── */
+@utility text-h1 {
+  font-size: clamp(2.75rem, 1.9rem + 3.6vw, 5rem);
+  line-height: 0.9;
+  font-weight: 500;
+  letter-spacing: -0.0375em;
+  text-wrap: balance;
+}
+@utility text-h2 {
+  font-size: clamp(2.375rem, 1.73rem + 2.75vw, 4rem);
+  line-height: 0.875;
+  font-weight: 500;
+  letter-spacing: -0.03125em;
+  text-wrap: balance;
+}
+@utility text-h3 {
+  font-size: clamp(1.875rem, 1.36rem + 2.2vw, 3rem);
+  line-height: 0.917;
+  font-weight: 500;
+  letter-spacing: -0.042em;
+  text-wrap: balance;
+}
+@utility text-h4 {
+  font-size: clamp(1.25rem, 1.08rem + 0.7vw, 1.5rem);
+  line-height: 1.17;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+@utility text-lead {
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  line-height: 1.36;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+@utility text-eyebrow {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+@utility container-site {
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @variant md {
+    padding-inline: 1.5rem;
+  }
+  @variant lg {
+    padding-inline: 2.5rem;
+  }
+}
+
+@utility section-y {
+  padding-block: 5rem;
+  @variant lg {
+    padding-block: 7.5rem;
+  }
+}
+
+/* ── Motion ─────────────────────────────────────────────────── */
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@utility animate-marquee {
+  animation: marquee var(--marquee-duration, 40s) linear infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 }

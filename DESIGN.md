@@ -15,7 +15,8 @@ Lenguaje visual editorial inspirado en el template "Foster & Reeves" (BYQ Studio
 | `--ink-8…88` | ink + α   | 8/16/32/48/64/88 % — bordes, texto secundario, grilla |
 
 - `--accent` se sobreescribe en runtime desde `SiteSettings.accentColor` (style en `<html>`). Default lima; alternativa terracota de la marca actual.
-- Texto sobre acento: siempre `--ink`. Verificar contraste AA si el acento cambia (el admin avisa).
+- Texto sobre acento: `--accent-fg`, calculado en runtime (`src/lib/color.ts`): ink o paper, el de mayor contraste. Con lima → ink (15.8:1); con terracota `#c74a2e` → paper (4.3:1, solo AA grande — el admin avisa).
+- Fragmento resaltado en títulos (`<Highlighted>`): token `--highlight` por tono — acento sobre `dark`; ink 48 % sobre tonos claros; paper 64 % sobre `stone`.
 - Texto sobre fotos: overlay `--ink` ≥ 48 %.
 
 ## 2. Tipografía
@@ -39,7 +40,7 @@ Lenguaje visual editorial inspirado en el template "Foster & Reeves" (BYQ Studio
 
 - Contenedor: `max-width: 1440px`, gutter 16px (mobile) / 24px (tablet) / 40px (desktop).
 - Grilla: 4 cols mobile, 8 tablet, 12 desktop.
-- **Grilla de fondo**: líneas verticales de 1px (`--ink-8` sobre claro, `--paper` 8 % sobre oscuro), fijas a todo el alto, alineadas a las columnas del contenedor (4 líneas mobile / 6 desktop).
+- **Grilla de fondo**: overlay fijo con líneas verticales de 1px (blanco 10 % con `mix-blend-mode: difference`: se lee más oscuro sobre claro y más claro sobre oscuro), alineadas al contenedor: bordes + cada 3 de las 12 columnas (3 líneas mobile / 5 desde md).
 - Ritmo vertical de secciones: 80px mobile / 120px desktop. Secciones alternan oscuro/claro.
 
 ## 4. Componentes
