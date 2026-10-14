@@ -1,3 +1,4 @@
+import type { ICON_NAMES } from "@/lib/admin/icons";
 import {
   Building2,
   Factory,
@@ -31,8 +32,9 @@ export const ICONS = {
   Trees,
   Trophy,
   Wrench,
-} satisfies Record<string, LucideIcon>;
+} satisfies Record<IconNameFromList, LucideIcon>;
 
+type IconNameFromList = (typeof ICON_NAMES)[number];
 export type IconName = keyof typeof ICONS;
 
 export function iconByName(name: string | null | undefined): LucideIcon {

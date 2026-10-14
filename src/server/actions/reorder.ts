@@ -3,29 +3,29 @@
 import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { requireUser } from "@/lib/auth/session";
-import { TAGS } from "@/lib/content/tags";
 import { db } from "@/lib/db";
 import { fail, invalidate, ok, type ActionResult } from "../action-utils";
+import { ENTITY_TAGS } from "../entity-tags";
 
-/** Whitelisted sortable entities → Prisma model + cache tags to invalidate. */
-const ENTITIES = {
-  service: { tags: [TAGS.services] },
-  project: { tags: [TAGS.projects] },
-  projectCategory: { tags: [TAGS.categories] },
-  processStep: { tags: [TAGS.homeLists] },
-  valueItem: { tags: [TAGS.homeLists] },
-  highlight: { tags: [TAGS.homeLists] },
-  marqueeItem: { tags: [TAGS.homeLists] },
-  clientLogo: { tags: [TAGS.clientLogos] },
-  testimonial: { tags: [TAGS.testimonials] },
-  galleryImage: { tags: [TAGS.gallery] },
-  blogCategory: { tags: [TAGS.blog] },
-} as const;
+/** Whitelisted sortable entities. */
+const SORTABLE = [
+  "service",
+  "project",
+  "projectCategory",
+  "processStep",
+  "valueItem",
+  "highlight",
+  "marqueeItem",
+  "clientLogo",
+  "testimonial",
+  "galleryImage",
+  "blogCategory",
+] as const satisfies (keyof typeof ENTITY_TAGS)[];
 
-export type SortableEntity = keyof typeof ENTITIES;
+export type SortableEntity = (typeof SORTABLE)[number];
 
 const schema = z.object({
-  entity: z.enum(Object.keys(ENTITIES) as [SortableEntity, ...SortableEntity[]]),
+  entity: z.enum(SORTABLE),
   ids: z.array(z.string().min(1)).max(500),
 });
 
@@ -44,6 +44,6 @@ export async function reorder(entity: SortableEntity, ids: string[]): Promise<Ac
     ),
   );
   await audit(user.id, "reorder", parsed.data.entity);
-  invalidate(...ENTITIES[parsed.data.entity].tags);
+  invalidate(...ENTITY_TAGS[parsed.data.entity]);
   return ok(undefined, "Orden guardado.");
 }
