@@ -252,7 +252,6 @@ async function main() {
   // ── Settings ────────────────────────────────────────────────
   const phones = phonesSchema.parse([
     { label: "WhatsApp", number: "03487-656133", whatsapp: true, primary: true },
-    { label: "Teléfono", number: "03487-514196", whatsapp: false, primary: false },
   ]);
 
   const pendingTodos = todosSchema.parse(
