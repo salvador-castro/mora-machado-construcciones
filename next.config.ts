@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  experimental: {
+    // Media uploads go one file per action call (max 10 MB each, see lib/media/process.ts).
+    serverActions: { bodySizeLimit: "11mb" },
+    // /admin/* runs through proxy.ts, which buffers request bodies.
+    proxyClientMaxBodySize: "12mb",
+  },
   turbopack: {
     rules: {
       "*.css": {
