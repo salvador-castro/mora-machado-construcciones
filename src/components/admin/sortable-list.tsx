@@ -80,7 +80,7 @@ export function SortableList<T extends { id: string }>({
   itemClassName,
 }: {
   items: T[];
-  onReorder: (items: T[]) => void;
+  onReorder: (items: T[], from: number, to: number) => void;
   renderItem: (item: T, handle: Handle, index: number) => React.ReactNode;
   layout?: "list" | "grid";
   className?: string;
@@ -96,7 +96,7 @@ export function SortableList<T extends { id: string }>({
     if (!over || active.id === over.id) return;
     const from = items.findIndex((i) => i.id === active.id);
     const to = items.findIndex((i) => i.id === over.id);
-    onReorder(arrayMove(items, from, to));
+    onReorder(arrayMove(items, from, to), from, to);
   }
 
   return (

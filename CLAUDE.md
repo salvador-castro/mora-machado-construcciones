@@ -72,13 +72,14 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`outpu
 
 ## Fases
 
-F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings (en curso) · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
+F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings ✅ · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
 
-## Estado de F7 (para retomar)
+## Admin: editores de entidades
 
-Hecho: medios (biblioteca, picker, uso), drag & drop, editor de secciones por schema, Tiptap, configuración, listas genéricas (`LIST_ENTITIES` + `ListManager`), vista previa con draft mode (`/admin/preview?type=post|project|service&id=`), actions de servicios/obras/notas (`src/server/actions/{services,projects,posts}.ts`) y schemas (`src/lib/admin/schemas.ts`).
-Falta: UI de servicios (`/admin/servicios`, nuevo, [id]), obras (`/admin/obras` + galería de la obra), blog (`/admin/blog` con tabs notas/categorías), usuarios + `/admin/cuenta`, e2e de esos flujos.
-Testing interactivo del admin: usar Playwright (`pnpm test:e2e --project=admin`); la pestaña de Chrome automatizada queda `hidden` y React no revela el contenido streameado.
+- Servicios, obras y notas tienen editor de página completa (`src/components/admin/entities/*-form.tsx`) con piezas compartidas en `src/components/admin/form/entity-fields.tsx` (título+slug, SEO, rich text, ítems título/descripción, vista previa, borrar). Al crear, `router.replace` al `[id]`; la página remonta el form con `key={updatedAt}`.
+- Listados ordenables de servicios/obras: `SortableEntityList`. Blog: tabs notas/categorías (`/admin/blog?tab=categorias`).
+- Usuarios (`/admin/usuarios`, solo ADMIN): no se puede quitar el rol/desactivar/borrar a uno mismo ni al último admin activo; cambiar rol, desactivar o resetear contraseña cierra sus sesiones. Política de contraseñas client-safe en `src/lib/auth/password-policy.ts` (`password.ts` usa argon2, solo server).
+- Testing interactivo del admin: Playwright (`pnpm test:e2e --project=admin`); la pestaña de Chrome automatizada queda `hidden` y React no revela el contenido streameado.
 
 ## Entorno: iCloud
 

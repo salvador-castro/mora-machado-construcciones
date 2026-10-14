@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ICON_NAMES } from "@/lib/admin/icons";
+import { PASSWORD_MIN } from "@/lib/auth/password-policy";
 import { titledItemSchema } from "@/lib/content/schemas";
 import { SLUG_RE } from "@/lib/slug";
 
@@ -80,3 +81,40 @@ export const postFormSchema = z
     path: ["content"],
   });
 export type PostFormInput = z.input<typeof postFormSchema>;
+
+// ─── Users ─────────────────────────────────────────────────────
+
+const email = z.email("Email inválido").trim().toLowerCase().max(200);
+const password = z
+  .string()
+  .min(PASSWORD_MIN, `Mínimo ${PASSWORD_MIN} caracteres`)
+  .max(200, "Demasiado larga");
+
+export const userUpdateSchema = z.object({
+  name: req(80),
+  email,
+  role: z.enum(["ADMIN", "EDITOR"]),
+  active: z.boolean(),
+});
+export type UserUpdateInput = z.input<typeof userUpdateSchema>;
+
+export const userCreateSchema = userUpdateSchema.extend({ password });
+export type UserCreateInput = z.input<typeof userCreateSchema>;
+
+export const passwordResetSchema = z.object({ password });
+export type PasswordResetInput = z.input<typeof passwordResetSchema>;
+
+export const accountSchema = z.object({ name: req(80), email });
+export type AccountInput = z.input<typeof accountSchema>;
+
+export const changePasswordSchema = z
+  .object({
+    current: z.string().min(1, "Campo obligatorio").max(200),
+    password,
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirm"],
+  });
+export type ChangePasswordInput = z.input<typeof changePasswordSchema>;

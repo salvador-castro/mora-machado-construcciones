@@ -50,3 +50,11 @@ export async function deleteService(id: string): Promise<ActionResult> {
   invalidate(...ENTITY_TAGS.service);
   return ok(undefined, "Servicio eliminado.");
 }
+
+export async function setServicePublished(id: string, published: boolean): Promise<ActionResult> {
+  const user = await requireUser();
+  await db.service.update({ where: { id }, data: { published } });
+  await audit(user.id, `published:${published}`, "service", id);
+  invalidate(...ENTITY_TAGS.service);
+  return ok(undefined, published ? "Servicio visible." : "Servicio oculto.");
+}

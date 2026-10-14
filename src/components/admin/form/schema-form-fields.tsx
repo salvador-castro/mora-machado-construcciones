@@ -1,20 +1,15 @@
 "use client";
 
-import { Controller, useFormContext, type FieldErrors } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { MediaField } from "@/components/admin/media/media-picker";
 import { Input } from "@/components/admin/ui/input";
 import { Switch } from "@/components/admin/ui/switch";
 import { Textarea } from "@/components/admin/ui/textarea";
 import type { FieldInfo } from "@/lib/content/form-meta";
 import type { MediaListItem } from "@/lib/media/admin-types";
+import { errorAt } from "./entity-fields";
 import { Field } from "./field";
 import { RichTextEditor } from "./rich-text-editor";
-
-function errorAt(errors: FieldErrors, path: string): string | undefined {
-  let node: unknown = errors;
-  for (const part of path.split(".")) node = (node as Record<string, unknown> | undefined)?.[part];
-  return (node as { message?: string } | undefined)?.message;
-}
 
 /** Renders inputs for fields described by describeObject(schema). */
 export function SchemaFormFields({
