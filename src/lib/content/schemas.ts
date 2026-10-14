@@ -213,3 +213,72 @@ export const titledItemSchema = z.object({
 export const titledItemsSchema = z.array(titledItemSchema).max(12);
 
 export const galleryShapes = ["normal", "tall", "wide"] as const;
+
+// ─── Site settings form ────────────────────────────────────────
+
+const optionalString = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((v) => (v === "" ? null : v))
+    .nullable();
+
+export const settingsSchema = z
+  .object({
+    brandName: z.string().trim().min(2, "Campo obligatorio").max(120),
+    tagline: z.string().trim().min(2, "Campo obligatorio").max(160),
+    logoId: z.string().nullable(),
+    faviconId: z.string().nullable(),
+    accentColor: z
+      .string()
+      .trim()
+      .regex(/^#[0-9a-fA-F]{6}$/, "Usá un color hexadecimal, ej. #E8FD53"),
+    phones: phonesSchema,
+    email: z
+      .union([z.literal(""), z.email("Email inválido")])
+      .transform((v) => v || null)
+      .nullable(),
+    address: optionalString(200),
+    coverage: optionalString(200),
+    mapEmbedUrl: z
+      .union([
+        z.literal(""),
+        z
+          .url()
+          .regex(
+            /^https:\/\/(www\.)?google\.[a-z.]+\/maps/,
+            "Pegá un enlace de Google Maps (embed).",
+          ),
+      ])
+      .transform((v) => v || null)
+      .nullable(),
+    socials: socialsSchema,
+    announcementText: optionalString(160),
+    announcementUrl: z
+      .union([z.literal(""), href])
+      .transform((v) => v || null)
+      .nullable(),
+    announcementEnabled: z.boolean(),
+    footerText: optionalString(300),
+    defaultSeoTitle: z
+      .string()
+      .trim()
+      .min(10, "Mínimo 10 caracteres")
+      .max(90, "Máximo 90 caracteres"),
+    defaultSeoDescription: z
+      .string()
+      .trim()
+      .min(50, "Mínimo 50 caracteres")
+      .max(170, "Máximo 170 caracteres"),
+    defaultOgImageId: z.string().nullable(),
+    notificationEmails: z.array(z.email("Email inválido")).max(10),
+    budgetRanges: z.array(z.string().trim().min(1).max(80)).max(12),
+    pendingTodos: todosSchema,
+  })
+  .refine((s) => !s.announcementEnabled || !!s.announcementText, {
+    message: "Escribí el texto del anuncio o desactivalo.",
+    path: ["announcementText"],
+  });
+
+export type SettingsInput = z.input<typeof settingsSchema>;
