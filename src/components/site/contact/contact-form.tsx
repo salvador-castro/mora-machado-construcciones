@@ -1,39 +1,56 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, useTransition } from "react";
 import Link from "next/link";
+import Script from "next/script";
 import { Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { leadSchema, leadToWhatsAppText, type LeadInput } from "@/lib/validation/lead";
 import { whatsappUrl } from "@/lib/whatsapp";
 import { cn } from "@/lib/cn";
+import { submitLead } from "@/server/actions/contact";
 
 type FieldErrors = Partial<Record<keyof LeadInput, string>>;
+
+declare global {
+  interface Window {
+    turnstile?: { reset: (el?: string | HTMLElement) => void };
+  }
+}
 
 const inputClass =
   "w-full border border-ink/24 bg-paper px-4 py-3 text-ink placeholder:text-ink/40 transition-colors hover:border-ink/48 focus:border-ink focus:outline-none aria-invalid:border-red-700";
 
 /**
- * Contact form. F4: validates and opens WhatsApp (legacy behavior).
- * TODO(F8): submit via server action (save Lead + email) before opening WhatsApp.
+ * Contact form: validates on the client, saves the lead via server action
+ * (which emails the team) and then offers to continue on WhatsApp.
  */
 export function ContactForm({
   budgetRanges,
   whatsappNumber,
   sourcePage = "/",
+  turnstileSiteKey,
 }: {
   budgetRanges: string[];
   whatsappNumber: string | null;
   sourcePage?: string;
+  turnstileSiteKey?: string;
 }) {
   const uid = useId();
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [sent, setSent] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [sent, setSent] = useState<LeadInput | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function focusField(formEl: HTMLFormElement, name: string | undefined) {
+    if (name) formEl.querySelector<HTMLElement>(`[name="${name}"]`)?.focus();
+  }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const parsed = leadSchema.safeParse({
+    const formEl = e.currentTarget;
+    const form = new FormData(formEl);
+    const raw = {
       name: form.get("name"),
       phone: form.get("phone"),
       email: form.get("email") ?? "",
@@ -42,7 +59,16 @@ export function ContactForm({
       consent: form.get("consent") === "on",
       website: form.get("website") ?? "",
       sourcePage,
-    });
+    };
+    // Honeypot filled: let the server swallow it and show the normal success state.
+    if (raw.website) {
+      startTransition(async () => {
+        await submitLead(raw);
+        setSent(raw as LeadInput);
+      });
+      return;
+    }
+    const parsed = leadSchema.safeParse(raw);
 
     if (!parsed.success) {
       const next: FieldErrors = {};
@@ -51,20 +77,28 @@ export function ContactForm({
         next[key] ??= issue.message;
       }
       setErrors(next);
-      const first = e.currentTarget.querySelector<HTMLElement>(`[name="${Object.keys(next)[0]}"]`);
-      first?.focus();
+      focusField(formEl, Object.keys(next)[0]);
       return;
     }
 
     setErrors({});
-    if (whatsappNumber) {
-      window.open(
-        whatsappUrl(whatsappNumber, leadToWhatsAppText(parsed.data)),
-        "_blank",
-        "noopener",
-      );
-    }
-    setSent(true);
+    setFormError(null);
+    const token = form.get("cf-turnstile-response");
+    startTransition(async () => {
+      try {
+        const res = await submitLead(parsed.data, typeof token === "string" ? token : undefined);
+        if (res.ok) {
+          setSent(parsed.data);
+          return;
+        }
+        setErrors((res.fieldErrors ?? {}) as FieldErrors);
+        setFormError(res.error);
+        focusField(formEl, Object.keys(res.fieldErrors ?? {})[0]);
+      } catch {
+        setFormError("No pudimos enviar la consulta. Probá de nuevo o escribinos por WhatsApp.");
+      }
+      window.turnstile?.reset();
+    });
   }
 
   if (sent) {
@@ -74,10 +108,22 @@ export function ContactForm({
           <Check aria-hidden className="size-6" />
         </span>
         <p className="text-h4">¡Gracias! Recibimos tu consulta.</p>
-        <p className="text-ink/64">Te respondemos por WhatsApp a la brevedad.</p>
-        <Button variant="secondary" onClick={() => setSent(false)}>
-          Enviar otra consulta
-        </Button>
+        <p className="text-ink/64">Te respondemos a la brevedad.</p>
+        <div className="flex flex-wrap gap-3">
+          {whatsappNumber && (
+            <ButtonLink
+              href={whatsappUrl(whatsappNumber, leadToWhatsAppText(sent))}
+              target="_blank"
+              rel="noopener noreferrer"
+              arrow
+            >
+              Seguir por WhatsApp
+            </ButtonLink>
+          )}
+          <Button variant="secondary" onClick={() => setSent(null)}>
+            Enviar otra consulta
+          </Button>
+        </div>
       </div>
     );
   }
@@ -176,9 +222,20 @@ export function ContactForm({
         </div>
         {error("consent")}
       </div>
+      {turnstileSiteKey && (
+        <div className="sm:col-span-2">
+          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+          <div className="cf-turnstile" data-sitekey={turnstileSiteKey} data-language="es" />
+        </div>
+      )}
+      {formError && (
+        <p role="alert" className="text-sm text-red-800 sm:col-span-2">
+          {formError}
+        </p>
+      )}
       <div className="sm:col-span-2">
-        <Button type="submit" arrow className="w-full sm:w-auto">
-          Enviar consulta
+        <Button type="submit" arrow className="w-full sm:w-auto" disabled={pending}>
+          {pending ? "Enviando…" : "Enviar consulta"}
         </Button>
       </div>
     </form>

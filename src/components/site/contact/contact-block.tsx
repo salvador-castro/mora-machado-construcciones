@@ -82,6 +82,7 @@ export function ContactBlock({
             budgetRanges={settings.budgetRanges}
             whatsappNumber={wa?.number ?? null}
             sourcePage={sourcePage}
+            turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || undefined}
           />
         </div>
       </Reveal>

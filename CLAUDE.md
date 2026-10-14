@@ -72,7 +72,7 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`outpu
 
 ## Fases
 
-F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings ✅ · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
+F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings ✅ · F8 contacto + leads ✅ · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
 
 ## Admin: editores de entidades
 
@@ -80,6 +80,13 @@ F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F
 - Listados ordenables de servicios/obras: `SortableEntityList`. Blog: tabs notas/categorías (`/admin/blog?tab=categorias`).
 - Usuarios (`/admin/usuarios`, solo ADMIN): no se puede quitar el rol/desactivar/borrar a uno mismo ni al último admin activo; cambiar rol, desactivar o resetear contraseña cierra sus sesiones. Política de contraseñas client-safe en `src/lib/auth/password-policy.ts` (`password.ts` usa argon2, solo server).
 - Testing interactivo del admin: Playwright (`pnpm test:e2e --project=admin`); la pestaña de Chrome automatizada queda `hidden` y React no revela el contenido streameado.
+
+## Contacto y consultas
+
+- Formulario público (`ContactForm`) → server action `submitLead` (`src/server/actions/contact.ts`): honeypot `website` (responde ok sin guardar), rate limit por IP hasheada (5 / 15 min en prod), Turnstile opcional (solo si están `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY`), >3 links → status `SPAM`. Tras guardar ofrece seguir por WhatsApp (no se abre solo: el popup se bloquea después de un await).
+- Email a `SiteSettings.notificationEmails` con `after()` (`src/lib/leads/notify.ts`, nodemailer en `src/lib/mail.ts`). Sin `SMTP_HOST` solo loguea.
+- Admin: `/admin/consultas` (filtro por estado en `?estado=`, búsqueda `?q=`, paginado), detalle con estado/notas/borrar, export CSV en `/admin/consultas-export` (mismos filtros, BOM UTF-8, anti CSV-injection).
+- e2e: Next 16 deja la página anterior oculta en el DOM (Activity) → en Playwright preferir `getByRole` (ignora lo oculto) sobre `getByLabel`/`getByText`.
 
 ## Entorno: iCloud
 
