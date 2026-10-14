@@ -1,5 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
+import { draftMode } from "next/headers";
 import { db } from "@/lib/db";
 import { mediaAssetSelect, toMediaAsset, type MediaAsset } from "@/lib/media/types";
 import {
@@ -203,11 +204,17 @@ export async function getServiceSlugs() {
   return rows.map((r) => r.slug);
 }
 
+/** True when an admin enabled preview (draft mode): unpublished items become visible. */
+async function isPreview() {
+  return (await draftMode()).isEnabled;
+}
+
 export async function getServiceBySlug(slug: string) {
   "use cache";
   cached(TAGS.services, TAGS.projects, TAGS.categories, TAGS.media);
+  const preview = await isPreview();
   const s = await db.service.findFirst({
-    where: { slug, published: true },
+    where: { slug, ...(preview ? {} : { published: true }) },
     include: {
       cover: { select: mediaAssetSelect },
       projects: {
@@ -262,8 +269,9 @@ export async function getProjectSlugs() {
 export async function getProjectBySlug(slug: string) {
   "use cache";
   cached(TAGS.projects, TAGS.categories, TAGS.services, TAGS.testimonials, TAGS.media);
+  const preview = await isPreview();
   const p = await db.project.findFirst({
-    where: { slug, published: true },
+    where: { slug, ...(preview ? {} : { published: true }) },
     include: {
       category: { select: { id: true, name: true, slug: true } },
       service: { select: { id: true, title: true, slug: true } },
@@ -337,10 +345,10 @@ export async function getPostSlugs() {
   return rows.map((r) => r.slug);
 }
 
-/** `preview` includes drafts (draft mode, F7). */
-export async function getPostBySlug(slug: string, preview = false) {
+export async function getPostBySlug(slug: string) {
   "use cache";
   cached(TAGS.blog, TAGS.media);
+  const preview = await isPreview();
   const post = await db.blogPost.findFirst({
     where: { slug, ...(preview ? {} : { status: "PUBLISHED" }) },
     include: {

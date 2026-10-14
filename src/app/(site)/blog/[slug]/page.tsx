@@ -32,7 +32,6 @@ export async function generateMetadata({ params }: PageProps<"/blog/[slug]">) {
   });
 }
 
-// TODO(F7): draft mode preview → getPostBySlug(slug, isDraftMode)
 export default async function PostPage({ params }: PageProps<"/blog/[slug]">) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);

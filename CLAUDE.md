@@ -72,4 +72,14 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`outpu
 
 ## Fases
 
-F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
+F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings (en curso) · F8 contacto + leads · F9 SEO/a11y/perf/seguridad · F10 tests + deploy
+
+## Estado de F7 (para retomar)
+
+Hecho: medios (biblioteca, picker, uso), drag & drop, editor de secciones por schema, Tiptap, configuración, listas genéricas (`LIST_ENTITIES` + `ListManager`), vista previa con draft mode (`/admin/preview?type=post|project|service&id=`), actions de servicios/obras/notas (`src/server/actions/{services,projects,posts}.ts`) y schemas (`src/lib/admin/schemas.ts`).
+Falta: UI de servicios (`/admin/servicios`, nuevo, [id]), obras (`/admin/obras` + galería de la obra), blog (`/admin/blog` con tabs notas/categorías), usuarios + `/admin/cuenta`, e2e de esos flujos.
+Testing interactivo del admin: usar Playwright (`pnpm test:e2e --project=admin`); la pestaña de Chrome automatizada queda `hidden` y React no revela el contenido streameado.
+
+## Entorno: iCloud
+
+El proyecto vive en `~/Desktop/proyects/...` con "Escritorio y Documentos" de iCloud **desactivado**. Si aparecen archivos/carpetas con sufijo " 2" (`README 2.md`, `models 2`, `node_modules/x 2`), son copias de conflicto de iCloud: reinstalar deps (`rm -rf node_modules src/generated && pnpm install`) y borrar las copias.

@@ -2,6 +2,7 @@ import { GridLines } from "@/components/ui/grid-lines";
 import { getSettings } from "@/lib/content/queries";
 import { primaryWhatsApp } from "@/lib/whatsapp";
 import { AnnouncementBar } from "./announcement-bar";
+import { PreviewBanner } from "./preview-banner";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 import { WhatsAppButton } from "./whatsapp-button";
@@ -19,6 +20,7 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
       >
         Saltar al contenido
       </a>
+      <PreviewBanner />
       {settings.announcementEnabled && settings.announcementText && (
         <AnnouncementBar text={settings.announcementText} url={settings.announcementUrl} />
       )}
