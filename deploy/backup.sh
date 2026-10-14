@@ -20,4 +20,4 @@ find "$DEST" -type f -mtime +"$KEEP_DAYS" -delete
 if [ -n "${BACKUP_RCLONE_REMOTE:-}" ]; then
   rclone copy "$DEST" "$BACKUP_RCLONE_REMOTE" --max-age 48h
 fi
-echo "[backup] $(date -Is) ok: $(du -sh "$DEST" | cut -f1) en $DEST"
+echo "[backup] $(date "+%F %T") ok: $(du -sh "$DEST" | cut -f1) en $DEST"

@@ -25,12 +25,16 @@ pnpm media:import-legacy # importa las 11 fotos del sitio viejo (desde git 39b8b
 pnpm db:studio
 pnpm db:check            # verifica conexión a Postgres
 pnpm create-admin        # crea/resetea un usuario ADMIN (interactivo)
+pnpm db:cleanup          # borra sesiones y rate limits vencidos (cron diario en prod)
+pnpm brand:build         # regenera logo/favicon WebP desde assets/brand/logo-original.png
+pnpm brand:import        # los sube a Medios y los asigna en Configuración si están vacíos
+pnpm test:e2e            # Playwright (projects: public, public-mobile, admin)
 ```
 
 ## Entorno local
 
 - Postgres 16 vía Homebrew en **puerto 5433** (`brew services start postgresql@16`); el Postgres 14 del sistema queda en 5432 sin tocar.
-- DB `mora_dev`, usuario `mora` / `mora_dev`. Variables en `.env` (documentadas en `.env.example`). `.env.local` solo tiene el token OIDC de Vercel del sitio viejo — no usar.
+- DB `mora_dev`, usuario `mora` / `mora_dev`. Variables en `.env` (documentadas en `.env.example`). `UPLOAD_DIR` debe ser **absoluto** (el server standalone corre desde otra carpeta). `.env.local` solo tiene el token OIDC de Vercel del sitio viejo — no usar.
 
 ## Convenciones
 
@@ -38,7 +42,7 @@ pnpm create-admin        # crea/resetea un usuario ADMIN (interactivo)
 - Lecturas públicas en `src/lib/content/queries.ts` con `'use cache'` + `cacheLife("max")` + `cacheTag` (tags en `src/lib/content/tags.ts`). Las server actions del admin llaman `updateTag(tag)` (read-your-writes inmediato). Todo lo que embebe media lleva también `TAGS.media`.
 - Imágenes públicas: `<MediaImage>` (srcset desde variantes). `/uploads/*` lo sirve Nginx en prod y `src/app/uploads/[...path]/route.ts` en dev.
 - No usar `new Date()`/`Math.random()` en render: Next 16 lo prohíbe en el shell estático (ver `CurrentYear`, cacheado con `cacheLife("days")`).
-- Rutas `[slug]`: `generateStaticParams` debe devolver ≥1 param (si no hay, `{ slug: "_" }` → 404). Se hace `await params` + `notFound()` antes de cualquier Suspense para tener 404 real, por eso `export const instant = false`.
+- Rutas `[slug]`: `generateStaticParams` debe devolver ≥1 param (si no hay, `{ slug: "_" }` → 404). Se hace `await params` + `notFound()` antes de cualquier Suspense, por eso `export const instant = false`. **En producción eso no alcanza para un 404 real** (el layout ya empezó a streamear con 200 → soft 404): `src/proxy.ts` chequea el slug de `/servicios|obras|blog/:slug` contra la DB (`publicSlugExists`) y reescribe a `/404` antes de renderizar; con Draft Mode deja pasar. Si se agrega otra ruta de detalle, sumarla ahí. En dev el 404 sale igual, así que esto solo se ve con build de producción.
 - Rich text: `<RichText>` sanitiza con `src/lib/sanitize.ts` (solo imágenes de `/uploads/`). Estilos en `.rich-text` (globals.css).
 - Textos de títulos de secciones en páginas de detalle: `PageContent` key `details`. `pnpm db:seed` sin `--force` crea las keys de `PageContent` que falten **y completa campos nuevos** de keys existentes (sin pisar ediciones): al agregar un campo a un schema de `PageContent`, poner su default en `prisma/seed.ts` y correr `pnpm db:seed`.
 - Admin (`src/app/admin`): `proxy.ts` hace chequeo optimista del JWT; la autorización real es `requireUser(role?)` (`src/lib/auth/session.ts`) en **cada** página y server action. El layout `(panel)` lee la sesión dentro de `<Suspense>`. **Toda página del admin exporta `export const instant = false`** (Next valida cada page por separado).
@@ -59,7 +63,15 @@ pnpm create-admin        # crea/resetea un usuario ADMIN (interactivo)
 
 ## Despliegue
 
-VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`output: "standalone"`, puerto 3000). Uploads en `UPLOAD_DIR` (`/var/www/mora/uploads`), servidos por Nginx en `/uploads/`. Ver `deploy/README.md`. El proyecto de Vercel vinculado (`.vercel/`) es del sitio viejo; se desvincula tras el cambio de DNS.
+VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. **No se usa Vercel** (el proyecto vinculado en `.vercel/` es del sitio viejo; se desvincula tras el cambio de DNS). Guía completa en `deploy/README.md`.
+
+- Releases como git worktrees en `/var/www/mora/releases`, `current` → activa, `shared/.env`, `uploads/`, `backups/`. `deploy/deploy.sh [rama]`: fetch → worktree → install → `migrate deploy` → `db:seed` (idempotente; en DB vacía carga todo) → build → copia `public` y `.next/static` al standalone → `pm2 reload` → `/healthz`, con rollback.
+- PM2: **una sola instancia fork** (la caché de `'use cache'`/`updateTag` vive en el proceso). `node --env-file=shared/.env`, `HOSTNAME=127.0.0.1`.
+- Nginx: `X-Real-IP` obligatorio (rate limiting). **Sin `X-Forwarded-Proto`**: con `https` Next 16 trata el rewrite a `/404` de `proxy.ts` como fetch externo y da 500. `/uploads/` lo sirve Nginx (solo `.webp`). Next manda `X-Accel-Buffering: no` (streaming).
+- `SITE_URL` y `SITE_NOINDEX` se leen en el build. Staging en subdominio con `SITE_NOINDEX=true`.
+- Cron: backup 03:15 (`deploy/backup.sh`, copia externa con rclone si `BACKUP_RCLONE_REMOTE`), `db:cleanup` 03:45.
+- CI (`.github/workflows/ci.yml`): format, lint, typecheck, seed, build y e2e contra el server standalone. Para correr e2e contra un Nginx local con certificado propio: `E2E_BASE_URL=https://… E2E_IGNORE_HTTPS=true`.
+- Logo: `assets/brand/` (fuente + WebP generados). El header/footer muestran el «MM» (`logo-mark`) + el nombre en texto (la palabra del logo completo no se lee sobre el footer `stone`). Favicon con fondo ink (la M blanca desaparece sobre blanco a 32 px); `/site-icon` lo sirve y `public/favicon.ico` es el fallback.
 
 ## Decisiones
 
@@ -73,7 +85,7 @@ VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. Nginx → PM2 (`outpu
 
 ## Fases
 
-F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings ✅ · F8 contacto + leads ✅ · F9 SEO/a11y/perf/seguridad ✅ · F10 tests + deploy
+F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F5 páginas internas ✅ · F6 auth + admin layout ✅ · F7 CRUDs/medios/settings ✅ · F8 contacto + leads ✅ · F9 SEO/a11y/perf/seguridad ✅ · F10 tests + deploy ✅ (código; falta ejecutarlo en el VPS, ver `deploy/README.md`)
 
 ## Admin: editores de entidades
 
