@@ -29,7 +29,7 @@ pnpm db:cleanup          # borra sesiones y rate limits vencidos (cron diario en
 pnpm brand:build         # regenera logo/favicon WebP desde assets/brand/logo-original.png
 pnpm brand:import        # los sube a Medios y los asigna en Configuración si están vacíos
 pnpm test:e2e            # Playwright (projects: public, public-mobile, admin)
-pnpm docs:pdf            # genera deploy/README.pdf (no se versiona) desde deploy/README.md
+pnpm docs:pdf            # regenera docs/guia-deploy-vps.pdf y docs/Donweb-VPS-rodo.pdf
 ```
 
 ## Entorno local
@@ -117,6 +117,14 @@ F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F
 - Bundle público sin zod ni librerías de animación: el formulario de contacto valida en la server action. No importar `@/lib/validation/*` (zod) desde componentes cliente del sitio.
 - Textos de negocio editables agregados en F9: `home.contact.consentText` (casilla de consentimiento) y `SiteSettings.whatsappMessage` (botón flotante).
 - Tests: `public.a11y` / `admin.a11y` (axe WCAG A/AA) y `public.seo`. Lighthouse (móvil, build de prod): a11y/best-practices/SEO 100; perf 92–99.
+
+## Estado actual y próximos pasos (16/10/2026)
+
+- Código terminado (F1–F10) y **`develop` en GitHub**. Sitio viejo sigue en Vercel; `main` = sitio viejo hasta el lanzamiento.
+- Documentación para el deploy en `docs/`: `guia-deploy-vps.pdf` (= `deploy/README.md`), `Donweb-VPS-rodo.md` / `.pdf` (contexto completo + copias de `deploy/`, para el proyecto "Donweb-VPS-rodo" de Claude online). Regenerar PDFs: `pnpm docs:pdf`. Si cambia algo de `deploy/` o del estado, actualizar también `docs/Donweb-VPS-rodo.md` (es una copia, no se genera sola).
+- Próximo: configurar el VPS siguiendo `deploy/README.md` (pasos 3–11, rama `develop`, en `nuevo.moramachadoconstrucciones.com`); cargar MX/SPF/DKIM de Webempresa en el DNS de Vercel (hoy **no hay MX**); Resend; backups a Google Drive; lanzamiento con OK del cliente (paso 16).
+- No probado aún en servidor real: reload/rollback con PM2, workflow de CI, certbot/DNS.
+- Pendientes de contenido del cliente: fotos en alta, revisar textos `// DRAFT`, rangos de presupuesto, alts de galería, color de acento (por ahora queda el actual).
 
 ## Entorno: iCloud
 

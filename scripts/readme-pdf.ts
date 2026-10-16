@@ -1,17 +1,21 @@
 /**
- * Renders deploy/README.md to deploy/README.pdf (A4, printable, clickable index).
- * Usage: `pnpm docs:pdf`   (needs Playwright's Chromium: `pnpm exec playwright install chromium`)
+ * Renders a Markdown file to an A4 PDF (printable, clickable index).
+ *   pnpm docs:pdf                       → deploy/README.md → docs/guia-deploy-vps.pdf
+ *                                         docs/Donweb-VPS-rodo.md → docs/Donweb-VPS-rodo.pdf
+ *   pnpm docs:pdf <in.md> <out.pdf>     → a single file
+ * Needs Playwright's Chromium: `pnpm exec playwright install chromium`.
  */
 import { readFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
 import { Marked } from "marked";
 import { gfmHeadingId } from "marked-gfm-heading-id";
 
-const SRC = "deploy/README.md";
-const OUT = "deploy/README.pdf";
-
-const marked = new Marked(gfmHeadingId());
-const body = await marked.parse(await readFile(SRC, "utf8"));
+const JOBS: [string, string][] = process.argv[3]
+  ? [[process.argv[2]!, process.argv[3]]]
+  : [
+      ["deploy/README.md", "docs/guia-deploy-vps.pdf"],
+      ["docs/Donweb-VPS-rodo.md", "docs/Donweb-VPS-rodo.pdf"],
+    ];
 
 const css = `
   @page { size: A4; margin: 18mm 16mm 20mm; }
@@ -38,25 +42,31 @@ const css = `
   input[type=checkbox] { margin-right: 5pt; }
 `;
 
-const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
-<title>Guía de despliegue — Mora Machado Construcciones</title><style>${css}</style></head>
-<body>${body}</body></html>`;
-
 const browser = await chromium.launch();
-const page = await browser.newPage();
-await page.setContent(html, { waitUntil: "load" });
-await page.pdf({
-  path: OUT,
-  format: "A4",
-  printBackground: true,
-  displayHeaderFooter: true,
-  headerTemplate: "<span></span>",
-  footerTemplate: `<div style="width:100%;font:8pt Helvetica,Arial,sans-serif;color:#5e5a53;padding:0 16mm;display:flex;justify-content:space-between">
-    <span>Guía de despliegue — Mora Machado Construcciones</span>
+for (const [SRC, OUT] of JOBS) {
+  const marked = new Marked(gfmHeadingId());
+  const md = await readFile(SRC, "utf8");
+  const body = await marked.parse(md);
+  const title = /^# (.+)$/m.exec(md)?.[1] ?? SRC;
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>${title}</title><style>${css}</style></head><body>${body}</body></html>`;
+
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: "load" });
+  await page.pdf({
+    path: OUT,
+    format: "A4",
+    printBackground: true,
+    displayHeaderFooter: true,
+    headerTemplate: "<span></span>",
+    footerTemplate: `<div style="width:100%;font:8pt Helvetica,Arial,sans-serif;color:#5e5a53;padding:0 16mm;display:flex;justify-content:space-between">
+    <span>${title.replace(/[<>&]/g, "")}</span>
     <span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>`,
-  margin: { top: "18mm", bottom: "20mm", left: "16mm", right: "16mm" },
-  outline: true,
-  tagged: true,
-});
+    margin: { top: "18mm", bottom: "20mm", left: "16mm", right: "16mm" },
+    outline: true,
+    tagged: true,
+  });
+  await page.close();
+  console.log(`✓ ${SRC} → ${OUT}`);
+}
 await browser.close();
-console.log(`✓ ${OUT}`);
