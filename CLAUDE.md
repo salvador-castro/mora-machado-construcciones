@@ -29,7 +29,7 @@ pnpm db:cleanup          # borra sesiones y rate limits vencidos (cron diario en
 pnpm brand:build         # regenera logo/favicon WebP desde assets/brand/logo-original.png
 pnpm brand:import        # los sube a Medios y los asigna en Configuración si están vacíos
 pnpm test:e2e            # Playwright (projects: public, public-mobile, admin)
-pnpm docs:pdf            # regenera docs/guia-deploy-vps.pdf y docs/Donweb-VPS-rodo.pdf
+pnpm docs:pdf            # regenera docs/Donweb-VPS-rodo.md (partes 2–3) y los PDFs de docs/
 ```
 
 ## Entorno local
@@ -64,7 +64,7 @@ pnpm docs:pdf            # regenera docs/guia-deploy-vps.pdf y docs/Donweb-VPS-r
 
 ## Despliegue
 
-VPS DonWeb Ubuntu 24.04, SSH puerto 5086, usuario `salva`. La web nueva **no** se publica en Vercel: hoy el sitio viejo sigue en Vercel y se migra al VPS **cuando el cliente dé el OK** (antes, prueba en `nuevo.moramachadoconstrucciones.com` con `SITE_NOINDEX=true`). Guía paso a paso (nivel junior) en `deploy/README.md`.
+VPS DonWeb Ubuntu 24.04 (4 vCPU / 8 GB / 30 GB), IP `201.32.131.60` (`vps-6520179-x.dattaweb.com`), SSH puerto **5460**; DonWeb entrega `root` → se crea `salva` (sudo) y se cierra root/contraseñas (guía, pasos 2.3 y 3.6). La web nueva **no** se publica en Vercel: hoy el sitio viejo sigue en Vercel y se migra al VPS **cuando el cliente dé el OK** (antes, prueba en `nuevo.moramachadoconstrucciones.com` con `SITE_NOINDEX=true`). Guía paso a paso (nivel junior) en `deploy/README.md`.
 
 - Dominio registrado en **GoDaddy**; **el DNS está en Vercel** (nameservers `ns*.vercel-dns.com`): los registros se editan en Vercel → Domains. Al lanzar, quitar el dominio del **proyecto** viejo, nunca de la cuenta (se borraría la zona DNS).
 - Casillas info@/sofia@/rodo@ en **Webempresa**. A oct-2026 el dominio **no tiene MX**: hay que cargar los MX/SPF/DKIM de Webempresa en el DNS de Vercel (paso 12 de la guía). Resend usa `send` y `resend._domainkey` (no toca la raíz).
@@ -121,7 +121,7 @@ F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F
 ## Estado actual y próximos pasos (16/10/2026)
 
 - Código terminado (F1–F10) y **`develop` en GitHub**. Sitio viejo sigue en Vercel; `main` = sitio viejo hasta el lanzamiento.
-- Documentación para el deploy en `docs/`: `guia-deploy-vps.pdf` (= `deploy/README.md`), `Donweb-VPS-rodo.md` / `.pdf` (contexto completo + copias de `deploy/`, para el proyecto "Donweb-VPS-rodo" de Claude online). Regenerar PDFs: `pnpm docs:pdf`. Si cambia algo de `deploy/` o del estado, actualizar también `docs/Donweb-VPS-rodo.md` (es una copia, no se genera sola).
+- Documentación para el deploy en `docs/`: `guia-deploy-vps.pdf` (= `deploy/README.md`), `Donweb-VPS-rodo.md` / `.pdf` (contexto completo + copias de `deploy/`, para el proyecto "Donweb-VPS-rodo" de Claude online). Regenerar PDFs: `pnpm docs:pdf`. `docs/Donweb-VPS-rodo.md`: la parte 1 (contexto) se edita a mano; las partes 2–3 (guía + archivos de `deploy/`) las regenera `pnpm docs:pdf`.
 - Próximo: configurar el VPS siguiendo `deploy/README.md` (pasos 3–11, rama `develop`, en `nuevo.moramachadoconstrucciones.com`); cargar MX/SPF/DKIM de Webempresa en el DNS de Vercel (hoy **no hay MX**); Resend; backups a Google Drive; lanzamiento con OK del cliente (paso 16).
 - No probado aún en servidor real: reload/rollback con PM2, workflow de CI, certbot/DNS.
 - Pendientes de contenido del cliente: fotos en alta, revisar textos `// DRAFT`, rangos de presupuesto, alts de galería, color de acento (por ahora queda el actual).

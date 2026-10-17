@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio el 16/10/2026. Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `c41316f chore(content): publish only the primary WhatsApp number`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `fc974b6 docs: versioned deploy guide PDF and Claude project context in docs/`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -37,17 +37,17 @@ contraseñas o claves en el chat. Respondé en español rioplatense.
 
 ## 2. Datos del servidor
 
-| Dato         | Valor                                                                                                                                           |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Proveedor    | DonWeb (VPS)                                                                                                                                    |
-| Sistema      | Ubuntu 24.04                                                                                                                                    |
-| IP           | `<IP_DEL_VPS>` (completar desde el panel de DonWeb)                                                                                             |
-| SSH          | puerto **5086**, usuario **`salva`**. Atajo en la Mac: `ssh mora-vps` (ver guía, paso 2.4).                                                     |
-| Zona horaria | `America/Argentina/Buenos_Aires` (los cron dependen de esto)                                                                                    |
-| Firewall     | `ufw`: 5086/tcp, 80/tcp, 443/tcp. Postgres solo `localhost`.                                                                                    |
-| App          | PM2, proceso **`mora`**, **una sola instancia** fork, `node --env-file=/var/www/mora/shared/.env server.js`, `HOSTNAME=127.0.0.1`, `PORT=3000`. |
-| Base         | PostgreSQL 16, usuario `mora`, base `mora_prod`, `localhost:5432`.                                                                              |
-| Carpeta raíz | `/var/www/mora`                                                                                                                                 |
+| Dato         | Valor                                                                                                                                                                                                            |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Proveedor    | DonWeb (VPS)                                                                                                                                                                                                     |
+| Sistema      | Ubuntu 24.04 (verificado: OpenSSH 9.6p1 Ubuntu) · plan 4 vCPU / 8 GB RAM / 30 GB NVMe / 2 TB                                                                                                                     |
+| IP           | `201.32.131.60` (IPv6 `2800:6c0:6::c04`, sin uso por ahora) · nombre `vps-6520179-x.dattaweb.com`                                                                                                                |
+| SSH          | puerto **5460** (el 22 lo bloquea DonWeb). DonWeb entrega solo `root`; se crea **`salva`** (sudo) y se desactivan el ingreso de root y las contraseñas (guía, pasos 2.3 y 3.6). Atajo en la Mac: `ssh mora-vps`. |
+| Zona horaria | `America/Argentina/Buenos_Aires` (los cron dependen de esto)                                                                                                                                                     |
+| Firewall     | `ufw`: 5460/tcp, 80/tcp, 443/tcp. DonWeb no filtra 80/443 (verificado 16/10). Postgres solo `localhost`.                                                                                                         |
+| App          | PM2, proceso **`mora`**, **una sola instancia** fork, `node --env-file=/var/www/mora/shared/.env server.js`, `HOSTNAME=127.0.0.1`, `PORT=3000`.                                                                  |
+| Base         | PostgreSQL 16, usuario `mora`, base `mora_prod`, `localhost:5432`.                                                                                                                                               |
+| Carpeta raíz | `/var/www/mora`                                                                                                                                                                                                  |
 
 ```
 /var/www/mora/
@@ -139,6 +139,15 @@ Después del primer deploy: `cd /var/www/mora/current && pnpm create-admin` y `c
 | `deploy/backup.sh`                   | Backup manual (cron 03:15).                                                                                                                                      |
 | `curl http://127.0.0.1:3000/healthz` | `{"ok":true}` si app y base funcionan; 503 si la base no responde.                                                                                               |
 
+## 7.b Segundo proyecto en el mismo VPS (próximamente)
+
+En 15–20 días empieza el **sistema de gestión** (empleados, registro diario, sueldos, obras, presupuestos con PDFs) en el **mismo VPS**. Plan acordado:
+
+- Base y usuario de Postgres **propios** (datos sensibles: DNI, CUIL, sueldos), proceso PM2 propio en otro puerto (3001), carpeta propia (`/var/www/mora-gestion`) y subdominio propio (ej. `gestion.moramachadoconstrucciones.com`).
+- Parametrizar `deploy.sh`, `ecosystem.config.cjs`, Nginx y backups (hoy asumen una sola app `mora` en el puerto 3000).
+- No deployar las dos apps a la vez (dos builds simultáneos pueden quedarse sin RAM).
+- Pasar el backup de fotos a incremental (hoy cada día es una copia completa).
+
 ## 8. Estado actual y pendientes
 
 **Hecho (código):** sitio + admin completos (F1–F10), Resend, SEO/a11y (Lighthouse 100 en a11y/BP/SEO), seguridad (CSP, rate limits), 26 tests e2e verdes, CI de GitHub Actions, scripts de deploy probados en local (primer deploy con base vacía, backup y restore, Nginx con HTTPS local).
@@ -152,7 +161,7 @@ Después del primer deploy: `cd /var/www/mora/current && pnpm create-admin` y `c
 **Pasos pendientes, en orden:**
 
 1. ~~`git push -u origin develop`~~ ✅ hecho el 16/10/2026.
-2. Configurar el VPS siguiendo la guía (pasos 3 a 11) con `develop` en `nuevo.moramachadoconstrucciones.com`.
+2. Configurar el VPS siguiendo la guía (pasos 2.2 a 11: llave SSH, crear `salva` desde root, seguridad, programas…) con `develop` en `nuevo.moramachadoconstrucciones.com`.
 3. Cargar MX/SPF/DKIM de Webempresa en Vercel (paso 12) — urgente, hoy no llegan emails a las casillas.
 4. Resend: dominio, DNS, API key (paso 13).
 5. Backups a Google Drive con rclone (paso 14).
@@ -228,7 +237,7 @@ Esta guía está pensada para alguien que **hace su primer deploy en un VPS**. E
 
 - **[Mac]** = se ejecuta en la terminal de tu Mac.
 - **[VPS]** = se ejecuta conectado al VPS por SSH.
-- Lo que está entre `<así>` lo reemplazás vos (sin los `<>`). Ej.: `<IP_DEL_VPS>` → `200.58.100.10`.
+- Lo que está entre `<así>` lo reemplazás vos (sin los `<>`). Ej.: `<CONTRASEÑA_DB>` → la contraseña que generaste.
 - Copiá los comandos **de a uno** y mirá qué responde antes de seguir.
 
 ---
@@ -253,9 +262,21 @@ Esta guía está pensada para alguien que **hace su primer deploy en un VPS**. E
 > dig +short MX moramachadoconstrucciones.com     # a dónde van los emails (hoy: vacío)
 > ```
 
+### Datos del VPS (DonWeb)
+
+| Dato                | Valor                                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| IP (IPv4)           | `201.32.131.60`                                                                                                                   |
+| IPv6                | `2800:6c0:6::c04` (no la usamos por ahora: no se crean registros `AAAA`)                                                          |
+| Nombre del servidor | `vps-6520179-x.dattaweb.com`                                                                                                      |
+| Sistema             | Ubuntu 24.04 (verificado: OpenSSH 9.6p1 Ubuntu)                                                                                   |
+| SSH                 | puerto **5460** (el 22 está bloqueado por DonWeb)                                                                                 |
+| Usuario inicial     | `root` (contraseña en el panel de DonWeb). En el paso 2.3 creamos el usuario `salva` y después se desactiva el ingreso de `root`. |
+| Puertos 80 y 443    | Llegan al VPS sin bloqueo de DonWeb (verificado): no hace falta abrir nada en el panel.                                           |
+
 ### Checklist: tené esto a mano
 
-- [ ] Panel de **DonWeb**: la **IP del VPS** y la contraseña inicial del usuario `salva` (el SSH está en el **puerto 5086**).
+- [ ] Panel de **DonWeb**: la contraseña de `root` (la IP y el puerto están en la tabla de arriba).
 - [ ] Acceso al **panel de Vercel** de la cuenta donde está el dominio (para editar el DNS).
 - [ ] Acceso al **cPanel de Webempresa** (para los registros de las casillas).
 - [ ] Tu cuenta de **GitHub** con permisos de administrador del repo.
@@ -294,15 +315,43 @@ ls ~/.ssh/id_ed25519.pub
   ```
 - Si el archivo existe, ya tenés una: seguí.
 
-### 2.3 Copiar tu llave al VPS
+### 2.3 Primer ingreso como `root` y creación de tu usuario
 
-**[Mac]** (te va a pedir la contraseña del usuario `salva` **una última vez**):
+DonWeb entrega el VPS con el usuario **`root`** (el administrador total). Trabajar siempre como `root` es peligroso: un error de tipeo puede romper el sistema, y es el usuario que todos los bots intentan adivinar. Por eso creamos un usuario propio, **`salva`**, que puede hacer tareas de administrador anteponiendo `sudo`, y después cerramos el ingreso de `root`.
+
+**[Mac]** — conectate como root (te pide la contraseña del panel de DonWeb):
 
 ```bash
-ssh-copy-id -p 5086 salva@<IP_DEL_VPS>
+ssh -p 5460 root@201.32.131.60
 ```
 
-### 2.4 Atajo para conectarte
+- La primera vez pregunta `Are you sure you want to continue connecting (yes/no)?`: escribí `yes`.
+- Al tipear la contraseña **no se ve nada** en pantalla (ni asteriscos): es normal. Pegala con `Cmd+V` y Enter.
+- Si te pide cambiar la contraseña de root, elegí una nueva y guardala en tu gestor.
+
+**[VPS, como root]** — creá el usuario y dale permisos de administrador:
+
+```bash
+adduser salva
+```
+
+Te pide una contraseña para `salva` (guardala en tu gestor: la vas a usar con `sudo`) y datos opcionales (nombre, teléfono…): Enter en todos y `Y` al final.
+
+```bash
+usermod -aG sudo salva          # lo suma al grupo de administradores
+id salva                        # tiene que aparecer "sudo" en la lista de grupos
+exit                            # salís del VPS
+```
+
+### 2.4 Copiar tu llave al usuario `salva`
+
+**[Mac]** (te pide la contraseña de `salva` **una última vez**):
+
+```bash
+ssh-copy-id -p 5460 salva@201.32.131.60
+```
+
+### 2.5 Atajo para conectarte
 
 **[Mac]**: abrí (o creá) `~/.ssh/config`:
 
@@ -314,15 +363,23 @@ Agregá al final:
 
 ```
 Host mora-vps
-    HostName <IP_DEL_VPS>
-    Port 5086
+    HostName 201.32.131.60
+    Port 5460
     User salva
     IdentityFile ~/.ssh/id_ed25519
 ```
 
 Guardá con `Ctrl+O`, Enter, y salí con `Ctrl+X`.
 
-✅ **Comprobá:** `ssh mora-vps` te conecta **sin pedir contraseña**. Para salir del VPS: `exit`.
+✅ **Comprobá:**
+
+```bash
+ssh mora-vps            # entra SIN pedir contraseña
+sudo -v                 # (ya en el VPS) pide la contraseña de salva y no da error
+exit
+```
+
+> De acá en adelante **siempre** entrás con `ssh mora-vps` (usuario `salva`), nunca como root.
 
 ---
 
@@ -356,18 +413,18 @@ La zona horaria importa porque los backups se programan "a las 03:15" de la hora
 
 El firewall (`ufw`) bloquea todo lo que no autoricemos.
 
-> ⚠️ **Muy importante:** autorizá el puerto SSH (5086) **antes** de activar el firewall. Si no, te quedás afuera del VPS y vas a tener que entrar por la consola del panel de DonWeb.
+> ⚠️ **Muy importante:** autorizá el puerto SSH (**5460**) **antes** de activar el firewall. Si no, te quedás afuera del VPS y vas a tener que entrar por la consola del panel de DonWeb.
 
 ```bash
 sudo apt install -y ufw
-sudo ufw allow 5086/tcp          # SSH
+sudo ufw allow 5460/tcp          # SSH (puerto de DonWeb)
 sudo ufw allow 80/tcp            # http (para certbot y redirigir a https)
 sudo ufw allow 443/tcp           # https
 sudo ufw enable                  # responde "y"
-sudo ufw status                  # tienen que aparecer 5086, 80 y 443 como ALLOW
+sudo ufw status                  # tienen que aparecer 5460, 80 y 443 como ALLOW
 ```
 
-> Si el panel de DonWeb tiene un firewall propio, abrí los mismos puertos ahí también.
+> DonWeb no bloquea 80 ni 443 en este VPS (verificado). Si algún día agregan un firewall en el panel, hay que abrir ahí los mismos puertos.
 
 ✅ **Comprobá:** abrí **otra** terminal en tu Mac y hacé `ssh mora-vps`. Si entra, el firewall está bien. Recién ahí cerrá la sesión vieja.
 
@@ -393,16 +450,36 @@ sudo apt install -y unattended-upgrades
 sudo dpkg-reconfigure -plow unattended-upgrades   # elegí "Yes"
 ```
 
-### 3.6 (Recomendado) Desactivar el login SSH con contraseña
+### 3.6 Cerrar el ingreso de `root` y las contraseñas por SSH
 
-Solo después de comprobar que entrás con la llave (paso 2.4). Así nadie puede adivinar la contraseña.
+Solo después de comprobar que entrás con la llave como `salva` (paso 2.5). Así nadie puede adivinar contraseñas ni entrar como `root`.
 
 ```bash
-echo "PasswordAuthentication no" | sudo tee /etc/ssh/sshd_config.d/90-no-password.conf
-sudo systemctl reload ssh
+sudo tee /etc/ssh/sshd_config.d/01-hardening.conf > /dev/null <<'EOF'
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+EOF
+sudo sshd -t && sudo systemctl reload ssh
 ```
 
-✅ **Comprobá:** en otra terminal de tu Mac, `ssh mora-vps` sigue entrando.
+> **Por qué el archivo se llama `01-…`:** SSH lee los archivos de `/etc/ssh/sshd_config.d/` en orden alfabético y se queda con el **primer** valor que encuentra. Ubuntu suele traer `50-cloud-init.conf` con `PasswordAuthentication yes`; si nuestro archivo se llamara `90-…`, ese "yes" ganaría.
+
+✅ **Comprobá:**
+
+```bash
+sudo sshd -T | grep -E "^(permitrootlogin|passwordauthentication)"
+# tiene que decir:  permitrootlogin no   y   passwordauthentication no
+```
+
+y, **sin cerrar la sesión actual**, en otra terminal de tu Mac:
+
+```bash
+ssh mora-vps                               # sigue entrando (con la llave)
+ssh -p 5460 root@201.32.131.60             # tiene que decir "Permission denied"
+```
+
+> Si te quedaras afuera: panel de DonWeb → **consola** del VPS (entrás como root desde el navegador) y borrás `/etc/ssh/sshd_config.d/01-hardening.conf`.
 
 ---
 
@@ -701,17 +778,17 @@ Vamos a crear `nuevo.moramachadoconstrucciones.com` apuntando al VPS. **No afect
 
 En el navegador: **Vercel** → (equipo donde está el dominio) → **Domains** → `moramachadoconstrucciones.com` → **DNS Records** → **Add Record**:
 
-| Campo | Valor          |
-| ----- | -------------- |
-| Name  | `nuevo`        |
-| Type  | `A`            |
-| Value | `<IP_DEL_VPS>` |
-| TTL   | `60`           |
+| Campo | Valor           |
+| ----- | --------------- |
+| Name  | `nuevo`         |
+| Type  | `A`             |
+| Value | `201.32.131.60` |
+| TTL   | `60`            |
 
 ✅ **Comprobá [Mac]** (puede tardar unos minutos):
 
 ```bash
-dig +short nuevo.moramachadoconstrucciones.com      # tiene que devolver la IP del VPS
+dig +short nuevo.moramachadoconstrucciones.com      # tiene que devolver 201.32.131.60
 ```
 
 ---
@@ -1068,24 +1145,24 @@ En **Vercel**:
 
 2. **Domains** → `moramachadoconstrucciones.com` → **DNS Records**: borrá los registros `A`/`ALIAS`/`CNAME` de la raíz y de `www` que apunten a Vercel (si quedó alguno) y creá:
 
-| Name             | Type | Value          |
-| ---------------- | ---- | -------------- |
-| _(vacío = raíz)_ | `A`  | `<IP_DEL_VPS>` |
-| `www`            | `A`  | `<IP_DEL_VPS>` |
+| Name             | Type | Value           |
+| ---------------- | ---- | --------------- |
+| _(vacío = raíz)_ | `A`  | `201.32.131.60` |
+| `www`            | `A`  | `201.32.131.60` |
 
 **No toques** los MX ni los TXT (son de los emails).
 
 ✅ **Comprobá [Mac]:**
 
 ```bash
-dig +short moramachadoconstrucciones.com       # la IP del VPS
-dig +short www.moramachadoconstrucciones.com   # la IP del VPS
+dig +short moramachadoconstrucciones.com       # 201.32.131.60
+dig +short www.moramachadoconstrucciones.com   # 201.32.131.60
 dig +short MX moramachadoconstrucciones.com    # sigue el de Webempresa
 ```
 
 ### 16.5 Nginx y certificado del dominio principal
 
-**[VPS]**, cuando los `dig` ya devuelvan la IP del VPS:
+**[VPS]**, cuando los `dig` ya devuelvan `201.32.131.60`:
 
 ```bash
 # http del dominio principal

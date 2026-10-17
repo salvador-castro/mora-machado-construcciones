@@ -22,7 +22,7 @@
     "create-admin": "tsx scripts/create-admin.ts",
     "brand:build": "tsx scripts/build-brand-assets.ts",
     "brand:import": "tsx scripts/import-brand.ts",
-    "docs:pdf": "tsx scripts/readme-pdf.ts",
+    "docs:pdf": "tsx scripts/build-claude-context.ts && prettier --write docs/Donweb-VPS-rodo.md > /dev/null && tsx scripts/readme-pdf.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
