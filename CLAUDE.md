@@ -64,7 +64,7 @@ pnpm docs:pdf            # regenera docs/Donweb-VPS-rodo.md (partes 2–3) y los
 
 ## Despliegue
 
-VPS DonWeb Ubuntu 24.04 (4 vCPU / 8 GB / 30 GB), IP `201.32.131.60` (`vps-6520179-x.dattaweb.com`), SSH puerto **5460**; DonWeb entrega `root` → se crea `salva` (sudo) y se cierra root/contraseñas (guía, pasos 2.3 y 3.6). La web nueva **no** se publica en Vercel: hoy el sitio viejo sigue en Vercel y se migra al VPS **cuando el cliente dé el OK** (antes, prueba en `nuevo.moramachadoconstrucciones.com` con `SITE_NOINDEX=true`). Guía paso a paso (nivel junior) en `deploy/README.md`.
+VPS DonWeb Ubuntu 24.04 (4 vCPU / 8 GB / 30 GB), IP `201.32.131.60` (`vps-6520179-x.dattaweb.com`), SSH puerto **5460**, alias en la Mac **`ssh ssh-rodo`** con llave propia `~/.ssh/rodo_vps` (no confundir con `vps-personal`, otro VPS DonWeb en 201.32.130.19:5086); DonWeb entrega `root` → se crea `salva` (sudo) y se cierra root/contraseñas (guía, pasos 2.3 y 3.6). La web nueva **no** se publica en Vercel: hoy el sitio viejo sigue en Vercel y se migra al VPS **cuando el cliente dé el OK** (antes, prueba en `nuevo.moramachadoconstrucciones.com` con `SITE_NOINDEX=true`). Guía paso a paso (nivel junior) en `deploy/README.md`.
 
 - Dominio registrado en **GoDaddy**; **el DNS está en Vercel** (nameservers `ns*.vercel-dns.com`): los registros se editan en Vercel → Domains. Al lanzar, quitar el dominio del **proyecto** viejo, nunca de la cuenta (se borraría la zona DNS).
 - Casillas info@/sofia@/rodo@ en **Webempresa**. A oct-2026 el dominio **no tiene MX**: hay que cargar los MX/SPF/DKIM de Webempresa en el DNS de Vercel (paso 12 de la guía). Resend usa `send` y `resend._domainkey` (no toca la raíz).

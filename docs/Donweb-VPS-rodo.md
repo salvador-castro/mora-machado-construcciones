@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `fc974b6 docs: versioned deploy guide PDF and Claude project context in docs/`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `4acde43 docs(deploy): real VPS data (DonWeb, port 5460, root bootstrap)`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -37,17 +37,17 @@ contraseñas o claves en el chat. Respondé en español rioplatense.
 
 ## 2. Datos del servidor
 
-| Dato         | Valor                                                                                                                                                                                                            |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Proveedor    | DonWeb (VPS)                                                                                                                                                                                                     |
-| Sistema      | Ubuntu 24.04 (verificado: OpenSSH 9.6p1 Ubuntu) · plan 4 vCPU / 8 GB RAM / 30 GB NVMe / 2 TB                                                                                                                     |
-| IP           | `201.32.131.60` (IPv6 `2800:6c0:6::c04`, sin uso por ahora) · nombre `vps-6520179-x.dattaweb.com`                                                                                                                |
-| SSH          | puerto **5460** (el 22 lo bloquea DonWeb). DonWeb entrega solo `root`; se crea **`salva`** (sudo) y se desactivan el ingreso de root y las contraseñas (guía, pasos 2.3 y 3.6). Atajo en la Mac: `ssh mora-vps`. |
-| Zona horaria | `America/Argentina/Buenos_Aires` (los cron dependen de esto)                                                                                                                                                     |
-| Firewall     | `ufw`: 5460/tcp, 80/tcp, 443/tcp. DonWeb no filtra 80/443 (verificado 16/10). Postgres solo `localhost`.                                                                                                         |
-| App          | PM2, proceso **`mora`**, **una sola instancia** fork, `node --env-file=/var/www/mora/shared/.env server.js`, `HOSTNAME=127.0.0.1`, `PORT=3000`.                                                                  |
-| Base         | PostgreSQL 16, usuario `mora`, base `mora_prod`, `localhost:5432`.                                                                                                                                               |
-| Carpeta raíz | `/var/www/mora`                                                                                                                                                                                                  |
+| Dato         | Valor                                                                                                                                                                                                                                                                                                                                                           |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Proveedor    | DonWeb (VPS)                                                                                                                                                                                                                                                                                                                                                    |
+| Sistema      | Ubuntu 24.04 (verificado: OpenSSH 9.6p1 Ubuntu) · plan 4 vCPU / 8 GB RAM / 30 GB NVMe / 2 TB                                                                                                                                                                                                                                                                    |
+| IP           | `201.32.131.60` (IPv6 `2800:6c0:6::c04`, sin uso por ahora) · nombre `vps-6520179-x.dattaweb.com`                                                                                                                                                                                                                                                               |
+| SSH          | puerto **5460** (el 22 lo bloquea DonWeb). DonWeb entrega solo `root`; se crea **`salva`** (sudo) y se desactivan el ingreso de root y las contraseñas (guía, pasos 2.3 y 3.6). Atajo en la Mac: **`ssh ssh-rodo`** (llave `~/.ssh/rodo_vps`, `IdentitiesOnly yes`). Ojo: `vps-personal` es **otro** VPS de DonWeb (201.32.130.19, puerto 5086) — no confundir. |
+| Zona horaria | `America/Argentina/Buenos_Aires` (los cron dependen de esto)                                                                                                                                                                                                                                                                                                    |
+| Firewall     | `ufw`: 5460/tcp, 80/tcp, 443/tcp. DonWeb no filtra 80/443 (verificado 16/10). Postgres solo `localhost`.                                                                                                                                                                                                                                                        |
+| App          | PM2, proceso **`mora`**, **una sola instancia** fork, `node --env-file=/var/www/mora/shared/.env server.js`, `HOSTNAME=127.0.0.1`, `PORT=3000`.                                                                                                                                                                                                                 |
+| Base         | PostgreSQL 16, usuario `mora`, base `mora_prod`, `localhost:5432`.                                                                                                                                                                                                                                                                                              |
+| Carpeta raíz | `/var/www/mora`                                                                                                                                                                                                                                                                                                                                                 |
 
 ```
 /var/www/mora/
@@ -301,19 +301,21 @@ git push -u origin develop
 
 > Mientras se prueba, el VPS usa la rama `develop`. En el lanzamiento se mergea a `main` ([paso 16](#16-lanzamiento-con-el-ok-del-cliente)).
 
-### 2.2 Crear tu llave SSH (si no tenés una)
+### 2.2 Crear una llave SSH solo para este servidor
+
+Usamos una llave **exclusiva** para el VPS de Mora Machado (`~/.ssh/rodo_vps`), igual que `vps-personal` usa `~/.ssh/donweb_vps`. Así, si algún día hay que revocar una, no afecta a los otros servidores.
 
 **[Mac]**:
 
 ```bash
-ls ~/.ssh/id_ed25519.pub
+ls ~/.ssh/rodo_vps.pub
 ```
 
-- Si dice "No such file", creala (apretá Enter en todas las preguntas, o poné una frase de seguridad):
+- Si dice "No such file", creala (podés poner una frase de seguridad o dejarla vacía con Enter):
   ```bash
-  ssh-keygen -t ed25519 -C "salva-mac"
+  ssh-keygen -t ed25519 -C "salva-mac rodo" -f ~/.ssh/rodo_vps
   ```
-- Si el archivo existe, ya tenés una: seguí.
+- Si ya existe, seguí.
 
 ### 2.3 Primer ingreso como `root` y creación de tu usuario
 
@@ -322,8 +324,10 @@ DonWeb entrega el VPS con el usuario **`root`** (el administrador total). Trabaj
 **[Mac]** — conectate como root (te pide la contraseña del panel de DonWeb):
 
 ```bash
-ssh -p 5460 root@201.32.131.60
+ssh -o PubkeyAuthentication=no -p 5460 root@201.32.131.60
 ```
+
+> `-o PubkeyAuthentication=no` hace que pida directamente la contraseña: como tenés varias llaves en la Mac, sin esto SSH las prueba todas y el servidor corta con `Too many authentication failures`.
 
 - La primera vez pregunta `Are you sure you want to continue connecting (yes/no)?`: escribí `yes`.
 - Al tipear la contraseña **no se ve nada** en pantalla (ni asteriscos): es normal. Pegala con `Cmd+V` y Enter.
@@ -348,7 +352,7 @@ exit                            # salís del VPS
 **[Mac]** (te pide la contraseña de `salva` **una última vez**):
 
 ```bash
-ssh-copy-id -p 5460 salva@201.32.131.60
+ssh-copy-id -i ~/.ssh/rodo_vps.pub -o IdentitiesOnly=yes -p 5460 salva@201.32.131.60
 ```
 
 ### 2.5 Atajo para conectarte
@@ -359,33 +363,38 @@ ssh-copy-id -p 5460 salva@201.32.131.60
 nano ~/.ssh/config
 ```
 
-Agregá al final:
+Agregá al final (debajo de `vps-personal`, sin tocar los otros bloques):
 
 ```
-Host mora-vps
+Host ssh-rodo
     HostName 201.32.131.60
     Port 5460
     User salva
-    IdentityFile ~/.ssh/id_ed25519
+    IdentityFile ~/.ssh/rodo_vps
+    IdentitiesOnly yes
+    AddKeysToAgent yes
+    UseKeychain yes
 ```
 
 Guardá con `Ctrl+O`, Enter, y salí con `Ctrl+X`.
 
+> **Por qué `IdentitiesOnly yes`:** tenés varias llaves (`donweb_vps`, `id_ed25519_lcaba`, …). Sin esa línea, SSH las prueba todas y el servidor puede cortar con `Too many authentication failures` antes de llegar a la correcta.
+
 ✅ **Comprobá:**
 
 ```bash
-ssh mora-vps            # entra SIN pedir contraseña
+ssh ssh-rodo            # entra SIN pedir contraseña
 sudo -v                 # (ya en el VPS) pide la contraseña de salva y no da error
 exit
 ```
 
-> De acá en adelante **siempre** entrás con `ssh mora-vps` (usuario `salva`), nunca como root.
+> De acá en adelante **siempre** entrás con `ssh ssh-rodo` (usuario `salva`), nunca como root.
 
 ---
 
 ## 3. Primer ingreso al VPS y seguridad básica
 
-Conectate: **[Mac]** `ssh mora-vps`. Desde acá, todo es **[VPS]** hasta que se diga lo contrario.
+Conectate: **[Mac]** `ssh ssh-rodo`. Desde acá, todo es **[VPS]** hasta que se diga lo contrario.
 
 ### 3.1 Ver qué hay instalado
 
@@ -426,7 +435,7 @@ sudo ufw status                  # tienen que aparecer 5460, 80 y 443 como ALLOW
 
 > DonWeb no bloquea 80 ni 443 en este VPS (verificado). Si algún día agregan un firewall en el panel, hay que abrir ahí los mismos puertos.
 
-✅ **Comprobá:** abrí **otra** terminal en tu Mac y hacé `ssh mora-vps`. Si entra, el firewall está bien. Recién ahí cerrá la sesión vieja.
+✅ **Comprobá:** abrí **otra** terminal en tu Mac y hacé `ssh ssh-rodo`. Si entra, el firewall está bien. Recién ahí cerrá la sesión vieja.
 
 ### 3.4 Memoria de intercambio (swap)
 
@@ -475,8 +484,8 @@ sudo sshd -T | grep -E "^(permitrootlogin|passwordauthentication)"
 y, **sin cerrar la sesión actual**, en otra terminal de tu Mac:
 
 ```bash
-ssh mora-vps                               # sigue entrando (con la llave)
-ssh -p 5460 root@201.32.131.60             # tiene que decir "Permission denied"
+ssh ssh-rodo                               # sigue entrando (con la llave)
+ssh -o PubkeyAuthentication=no -p 5460 root@201.32.131.60   # tiene que decir "Permission denied"
 ```
 
 > Si te quedaras afuera: panel de DonWeb → **consola** del VPS (entrás como root desde el navegador) y borrás `/etc/ssh/sshd_config.d/01-hardening.conf`.
@@ -1268,21 +1277,21 @@ pm2 reload mora
 
 ## 18. Si algo falla
 
-| Síntoma                                              | Causa probable                                                   | Qué hacer                                                                                                       |
-| ---------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| **502 Bad Gateway**                                  | La app no está corriendo.                                        | `pm2 status`; si no está "online": `pm2 logs mora --lines 50` para ver el error, y `pm2 reload mora`.           |
-| El deploy se corta en **Build** con `Killed`         | Falta memoria.                                                   | Agregá swap (paso 3.4) y volvé a correr el deploy.                                                              |
-| El deploy termina con `✗ /healthz no responde`       | La versión nueva no arranca (el script ya volvió a la anterior). | `pm2 logs mora --lines 100`. Suele ser una variable faltante o mal escrita en `.env`.                           |
-| `Error: P1001: Can't reach database`                 | Postgres apagado o `DATABASE_URL` mal.                           | `sudo systemctl status postgresql`; probá la conexión del paso 5.2.                                             |
-| `Permission denied (publickey)` al hacer `git fetch` | La deploy key no está cargada en GitHub.                         | Repetí el paso 7 y probá `ssh -T git@github.com`.                                                               |
-| certbot falla con **challenge** / **unauthorized**   | El DNS todavía no apunta al VPS, o el puerto 80 está cerrado.    | `dig +short <dominio>` tiene que dar la IP del VPS; `sudo ufw status`.                                          |
-| Las fotos nuevas no se ven (404)                     | Permisos de la carpeta.                                          | `ls -ld /var/www/mora/uploads` tiene que mostrar `drwxr-xr-x`; `chmod 755 /var/www/mora /var/www/mora/uploads`. |
-| Los emails de consultas no llegan                    | Falta la API key o el dominio no está verificado en Resend.      | Abrí la consulta en el admin: muestra el error. Revisá Resend → Domains y Emails.                               |
-| Los emails llegan a spam                             | Faltan DKIM/SPF/DMARC o todavía no propagaron.                   | Revisá el paso 13 y que el dominio figure **Verified** en Resend.                                               |
-| A info@ no le llegan emails de nadie                 | Faltan los MX de Webempresa.                                     | Paso 12.                                                                                                        |
-| Algunas páginas devuelven **500**                    | ¿Alguien agregó `X-Forwarded-Proto` en Nginx?                    | Ver las reglas del paso 10.                                                                                     |
-| El sitio muestra contenido viejo después de editar   | Hay más de una instancia de la app, o se agregó caché en Nginx.  | `pm2 status` tiene que mostrar **una** sola `mora`; nada de `proxy_cache` en Nginx.                             |
-| Me quedé afuera del SSH                              | Firewall o configuración de SSH.                                 | Entrá por la **consola web** del panel de DonWeb y revisá `sudo ufw status` y `/etc/ssh/sshd_config.d/`.        |
+| Síntoma                                                        | Causa probable                                                   | Qué hacer                                                                                                       |
+| -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **502 Bad Gateway**                                            | La app no está corriendo.                                        | `pm2 status`; si no está "online": `pm2 logs mora --lines 50` para ver el error, y `pm2 reload mora`.           |
+| El deploy se corta en **Build** con `Killed`                   | Falta memoria.                                                   | Agregá swap (paso 3.4) y volvé a correr el deploy.                                                              |
+| El deploy termina con `✗ /healthz no responde`                 | La versión nueva no arranca (el script ya volvió a la anterior). | `pm2 logs mora --lines 100`. Suele ser una variable faltante o mal escrita en `.env`.                           |
+| `Error: P1001: Can't reach database`                           | Postgres apagado o `DATABASE_URL` mal.                           | `sudo systemctl status postgresql`; probá la conexión del paso 5.2.                                             |
+| `Permission denied (publickey)` al hacer `git fetch`           | La deploy key no está cargada en GitHub.                         | Repetí el paso 7 y probá `ssh -T git@github.com`.                                                               |
+| certbot falla con **challenge** / **unauthorized**             | El DNS todavía no apunta al VPS, o el puerto 80 está cerrado.    | `dig +short <dominio>` tiene que dar la IP del VPS; `sudo ufw status`.                                          |
+| Las fotos nuevas no se ven (404)                               | Permisos de la carpeta.                                          | `ls -ld /var/www/mora/uploads` tiene que mostrar `drwxr-xr-x`; `chmod 755 /var/www/mora /var/www/mora/uploads`. |
+| Los emails de consultas no llegan                              | Falta la API key o el dominio no está verificado en Resend.      | Abrí la consulta en el admin: muestra el error. Revisá Resend → Domains y Emails.                               |
+| Los emails llegan a spam                                       | Faltan DKIM/SPF/DMARC o todavía no propagaron.                   | Revisá el paso 13 y que el dominio figure **Verified** en Resend.                                               |
+| A info@ no le llegan emails de nadie                           | Faltan los MX de Webempresa.                                     | Paso 12.                                                                                                        |
+| Algunas páginas devuelven **500**                              | ¿Alguien agregó `X-Forwarded-Proto` en Nginx?                    | Ver las reglas del paso 10.                                                                                     |
+| El sitio muestra contenido viejo después de editar             | Hay más de una instancia de la app, o se agregó caché en Nginx.  | `pm2 status` tiene que mostrar **una** sola `mora`; nada de `proxy_cache` en Nginx.                             |
+| Me quedé afuera del SSH (o `Too many authentication failures`) | Firewall o configuración de SSH.                                 | Entrá por la **consola web** del panel de DonWeb y revisá `sudo ufw status` y `/etc/ssh/sshd_config.d/`.        |
 
 ---
 
