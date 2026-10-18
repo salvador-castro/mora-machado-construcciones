@@ -654,6 +654,14 @@ La primera vez te pide un email (para avisos de vencimiento) y aceptar los térm
 
 ### 10.3 Configuración https
 
+`mora.conf` incluye `/etc/letsencrypt/options-ssl-nginx.conf` (los parámetros TLS recomendados por certbot). Como pedimos el certificado con `certonly --webroot`, certbot **no** crea ese archivo: hay que copiarlo una vez del plugin de Nginx (lo instalamos en el paso 4.1 con `python3-certbot-nginx`):
+
+```bash
+sudo cp /usr/lib/python3/dist-packages/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf /etc/letsencrypt/
+```
+
+✅ **Comprobá:** `ls -l /etc/letsencrypt/options-ssl-nginx.conf` muestra el archivo. Si no existe, `sudo nginx -t` falla con `open() "/etc/letsencrypt/options-ssl-nginx.conf" failed`.
+
 ```bash
 cd /var/www/mora/current/deploy/nginx
 sed 's/moramachadoconstrucciones\.com/nuevo.moramachadoconstrucciones.com/g' mora.conf \
@@ -1001,6 +1009,10 @@ sudo nginx -t && sudo systemctl reload nginx
 sudo certbot certonly --webroot -w /var/www/certbot \
   -d moramachadoconstrucciones.com -d www.moramachadoconstrucciones.com \
   --deploy-hook "systemctl reload nginx"
+
+# parámetros TLS (ya copiados en el paso 10.3; si no existe, copialo)
+ls -l /etc/letsencrypt/options-ssl-nginx.conf || \
+  sudo cp /usr/lib/python3/dist-packages/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf /etc/letsencrypt/
 
 # https del dominio principal
 sudo cp /var/www/mora/current/deploy/nginx/mora.conf /etc/nginx/sites-available/mora
