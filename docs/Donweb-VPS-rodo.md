@@ -42,7 +42,7 @@ contraseñas o claves en el chat. Respondé en español rioplatense.
 | Proveedor    | DonWeb (VPS)                                                                                                                                                                                                                                                                                                                                                    |
 | Sistema      | Ubuntu 24.04 (verificado: OpenSSH 9.6p1 Ubuntu) · plan 4 vCPU / 8 GB RAM / 30 GB NVMe / 2 TB                                                                                                                                                                                                                                                                    |
 | IP           | `201.32.131.60` (IPv6 `2800:6c0:6::c04`, sin uso por ahora) · nombre `vps-6520179-x.dattaweb.com`                                                                                                                                                                                                                                                               |
-| SSH          | puerto **5460** (el 22 lo bloquea DonWeb). DonWeb entrega solo `root`; se crea **`salva`** (sudo) y se desactivan el ingreso de root y las contraseñas (guía, pasos 2.3 y 3.6). Atajo en la Mac: **`ssh ssh-rodo`** (llave `~/.ssh/rodo_vps`, `IdentitiesOnly yes`). Ojo: `vps-personal` es **otro** VPS de DonWeb (201.32.130.19, puerto 5086) — no confundir. |
+| SSH          | puerto **5460** (el 22 lo bloquea DonWeb). DonWeb entrega solo `root`; se crea **`salva`** (sudo) y se desactivan el ingreso de root y las contraseñas (guía, pasos 2.3 y 3.6). Atajo en la Mac: **`ssh vps-rodo`** (llave `~/.ssh/rodo_vps`, `IdentitiesOnly yes`). Ojo: `vps-personal` es **otro** VPS de DonWeb (201.32.130.19, puerto 5086) — no confundir. |
 | Zona horaria | `America/Argentina/Buenos_Aires` (los cron dependen de esto)                                                                                                                                                                                                                                                                                                    |
 | Firewall     | `ufw`: 5460/tcp, 80/tcp, 443/tcp. DonWeb no filtra 80/443 (verificado 16/10). Postgres solo `localhost`.                                                                                                                                                                                                                                                        |
 | App          | PM2, proceso **`mora`**, **una sola instancia** fork, `node --env-file=/var/www/mora/shared/.env server.js`, `HOSTNAME=127.0.0.1`, `PORT=3000`.                                                                                                                                                                                                                 |
@@ -366,7 +366,7 @@ nano ~/.ssh/config
 Agregá al final (debajo de `vps-personal`, sin tocar los otros bloques):
 
 ```
-Host ssh-rodo
+Host vps-rodo
     HostName 201.32.131.60
     Port 5460
     User salva
@@ -383,18 +383,18 @@ Guardá con `Ctrl+O`, Enter, y salí con `Ctrl+X`.
 ✅ **Comprobá:**
 
 ```bash
-ssh ssh-rodo            # entra SIN pedir contraseña
+ssh vps-rodo            # entra SIN pedir contraseña
 sudo -v                 # (ya en el VPS) pide la contraseña de salva y no da error
 exit
 ```
 
-> De acá en adelante **siempre** entrás con `ssh ssh-rodo` (usuario `salva`), nunca como root.
+> De acá en adelante **siempre** entrás con `ssh vps-rodo` (usuario `salva`), nunca como root.
 
 ---
 
 ## 3. Primer ingreso al VPS y seguridad básica
 
-Conectate: **[Mac]** `ssh ssh-rodo`. Desde acá, todo es **[VPS]** hasta que se diga lo contrario.
+Conectate: **[Mac]** `ssh vps-rodo`. Desde acá, todo es **[VPS]** hasta que se diga lo contrario.
 
 ### 3.1 Ver qué hay instalado
 
@@ -435,7 +435,7 @@ sudo ufw status                  # tienen que aparecer 5460, 80 y 443 como ALLOW
 
 > DonWeb no bloquea 80 ni 443 en este VPS (verificado). Si algún día agregan un firewall en el panel, hay que abrir ahí los mismos puertos.
 
-✅ **Comprobá:** abrí **otra** terminal en tu Mac y hacé `ssh ssh-rodo`. Si entra, el firewall está bien. Recién ahí cerrá la sesión vieja.
+✅ **Comprobá:** abrí **otra** terminal en tu Mac y hacé `ssh vps-rodo`. Si entra, el firewall está bien. Recién ahí cerrá la sesión vieja.
 
 ### 3.4 Memoria de intercambio (swap)
 
@@ -484,7 +484,7 @@ sudo sshd -T | grep -E "^(permitrootlogin|passwordauthentication)"
 y, **sin cerrar la sesión actual**, en otra terminal de tu Mac:
 
 ```bash
-ssh ssh-rodo                               # sigue entrando (con la llave)
+ssh vps-rodo                               # sigue entrando (con la llave)
 ssh -o PubkeyAuthentication=no -p 5460 root@201.32.131.60   # tiene que decir "Permission denied"
 ```
 

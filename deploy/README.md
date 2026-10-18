@@ -184,7 +184,7 @@ nano ~/.ssh/config
 Agregá al final (debajo de `vps-personal`, sin tocar los otros bloques):
 
 ```
-Host ssh-rodo
+Host vps-rodo
     HostName 201.32.131.60
     Port 5460
     User salva
@@ -201,18 +201,18 @@ Guardá con `Ctrl+O`, Enter, y salí con `Ctrl+X`.
 ✅ **Comprobá:**
 
 ```bash
-ssh ssh-rodo            # entra SIN pedir contraseña
+ssh vps-rodo            # entra SIN pedir contraseña
 sudo -v                 # (ya en el VPS) pide la contraseña de salva y no da error
 exit
 ```
 
-> De acá en adelante **siempre** entrás con `ssh ssh-rodo` (usuario `salva`), nunca como root.
+> De acá en adelante **siempre** entrás con `ssh vps-rodo` (usuario `salva`), nunca como root.
 
 ---
 
 ## 3. Primer ingreso al VPS y seguridad básica
 
-Conectate: **[Mac]** `ssh ssh-rodo`. Desde acá, todo es **[VPS]** hasta que se diga lo contrario.
+Conectate: **[Mac]** `ssh vps-rodo`. Desde acá, todo es **[VPS]** hasta que se diga lo contrario.
 
 ### 3.1 Ver qué hay instalado
 
@@ -253,7 +253,7 @@ sudo ufw status                  # tienen que aparecer 5460, 80 y 443 como ALLOW
 
 > DonWeb no bloquea 80 ni 443 en este VPS (verificado). Si algún día agregan un firewall en el panel, hay que abrir ahí los mismos puertos.
 
-✅ **Comprobá:** abrí **otra** terminal en tu Mac y hacé `ssh ssh-rodo`. Si entra, el firewall está bien. Recién ahí cerrá la sesión vieja.
+✅ **Comprobá:** abrí **otra** terminal en tu Mac y hacé `ssh vps-rodo`. Si entra, el firewall está bien. Recién ahí cerrá la sesión vieja.
 
 ### 3.4 Memoria de intercambio (swap)
 
@@ -302,7 +302,7 @@ sudo sshd -T | grep -E "^(permitrootlogin|passwordauthentication)"
 y, **sin cerrar la sesión actual**, en otra terminal de tu Mac:
 
 ```bash
-ssh ssh-rodo                               # sigue entrando (con la llave)
+ssh vps-rodo                               # sigue entrando (con la llave)
 ssh -o PubkeyAuthentication=no -p 5460 root@201.32.131.60   # tiene que decir "Permission denied"
 ```
 
