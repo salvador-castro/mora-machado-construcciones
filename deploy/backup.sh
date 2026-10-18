@@ -3,6 +3,8 @@
 # Keeps BACKUP_KEEP_DAYS days locally; copies off-site when BACKUP_RCLONE_REMOTE
 # is set in shared/.env (e.g. "gdrive:mora-backups", configured with `rclone config`).
 set -Eeuo pipefail
+# Dumps contain the whole database: owner-only files (default umask leaves them 664).
+umask 077
 
 APP_ROOT="${APP_ROOT:-/var/www/mora}"
 DEST="$APP_ROOT/backups"

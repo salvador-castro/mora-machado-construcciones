@@ -401,6 +401,7 @@ Tiene que responder una tablita con un `1`.
 sudo mkdir -p /var/www/mora/{releases,shared,uploads,backups,logs} /var/www/certbot
 sudo chown -R salva:salva /var/www/mora
 chmod 755 /var/www/mora /var/www/mora/uploads
+chmod 700 /var/www/mora/backups      # los backups tienen la base completa: solo salva
 ```
 
 Qué es cada una:
@@ -412,7 +413,7 @@ Qué es cada una:
 ├── current      "atajo" que apunta a la release activa
 ├── shared/.env  configuración de producción (una sola, la usan todas las releases)
 ├── uploads/     fotos que sube el cliente desde el admin ⚠️ no se pueden perder
-├── backups/     copias diarias
+├── backups/     copias diarias (permisos 700: ni www-data ni otros usuarios pueden leerlas)
 └── logs/        registros de la app, backups y limpieza
 ```
 
