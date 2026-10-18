@@ -13,7 +13,7 @@ Esta guía está pensada para alguien que **hace su primer deploy en un VPS**. E
 
 - [0. Conceptos rápidos](#0-conceptos-rápidos)
 - [1. Qué hay hoy y qué necesitás antes de empezar](#1-qué-hay-hoy-y-qué-necesitás-antes-de-empezar)
-- [2. En tu Mac: subir el código y preparar la llave SSH](#2-en-tu-mac-subir-el-código-y-preparar-la-llave-ssh)
+- [2. En tus computadoras: subir el código y preparar la llave SSH](#2-en-tus-computadoras-subir-el-código-y-preparar-la-llave-ssh)
 - [3. Primer ingreso al VPS y seguridad básica](#3-primer-ingreso-al-vps-y-seguridad-básica)
 - [4. Instalar los programas](#4-instalar-los-programas)
 - [5. Base de datos](#5-base-de-datos)
@@ -82,15 +82,15 @@ Esta guía está pensada para alguien que **hace su primer deploy en un VPS**. E
 
 ### Datos del VPS (DonWeb)
 
-| Dato                | Valor                                                                                                                             |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| IP (IPv4)           | `201.32.131.60`                                                                                                                   |
-| IPv6                | `2800:6c0:6::c04` (no la usamos por ahora: no se crean registros `AAAA`)                                                          |
-| Nombre del servidor | `vps-6520179-x.dattaweb.com`                                                                                                      |
-| Sistema             | Ubuntu 24.04 (verificado: OpenSSH 9.6p1 Ubuntu)                                                                                   |
-| SSH                 | puerto **5460** (el 22 está bloqueado por DonWeb)                                                                                 |
-| Usuario inicial     | `root` (contraseña en el panel de DonWeb). En el paso 2.3 creamos el usuario `salva` y después se desactiva el ingreso de `root`. |
-| Puertos 80 y 443    | Llegan al VPS sin bloqueo de DonWeb (verificado): no hace falta abrir nada en el panel.                                           |
+| Dato                | Valor                                                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| IP (IPv4)           | `201.32.131.60`                                                                                                                      |
+| IPv6                | `2800:6c0:6::c04` (no la usamos por ahora: no se crean registros `AAAA`)                                                             |
+| Nombre del servidor | `vps-6520179-x.dattaweb.com`                                                                                                         |
+| Sistema             | Ubuntu 24.04 (verificado: OpenSSH 9.6p1 Ubuntu)                                                                                      |
+| SSH                 | puerto **5460**. El 22 lo filtra DonWeb desde afuera, pero `sshd` también lo escuchaba: se apaga en el paso 3.7.                     |
+| Usuario inicial     | `root` (contraseña en el panel de DonWeb). En el paso 2.3 creamos el usuario `salva`, y en el 3.8 se desactiva el ingreso de `root`. |
+| Puertos 80 y 443    | Llegan al VPS sin bloqueo de DonWeb (verificado): no hace falta abrir nada en el panel.                                              |
 
 ### Checklist: tené esto a mano
 
@@ -104,7 +104,7 @@ Esta guía está pensada para alguien que **hace su primer deploy en un VPS**. E
 
 ---
 
-## 2. En tu Mac: subir el código y preparar la llave SSH
+## 2. En tus computadoras: subir el código y preparar la llave SSH
 
 ### 2.1 Subir el código a GitHub
 
@@ -119,19 +119,19 @@ git push -u origin develop
 
 > Mientras se prueba, el VPS usa la rama `develop`. En el lanzamiento se mergea a `main` ([paso 16](#16-lanzamiento-con-el-ok-del-cliente)).
 
-### 2.2 Crear una llave SSH solo para este servidor
+### 2.2 La llave SSH de cada computadora
 
-Usamos una llave **exclusiva** para el VPS de Mora Machado (`~/.ssh/rodo_vps`), igual que `vps-personal` usa `~/.ssh/donweb_vps`. Así, si algún día hay que revocar una, no afecta a los otros servidores.
+Entrás al VPS con tu llave personal `~/.ssh/id_ed25519`, desde dos computadoras: la **Mac** y la **notebook Ubuntu**. Cada una tiene su propia llave, y en el VPS quedan cargadas en `salva` con los comentarios `salva-mac` y `salva-ubuntu`. Así, si perdés una computadora, borrás solo esa línea de `~/.ssh/authorized_keys` y la otra sigue entrando.
 
-**[Mac]**:
+**[Mac]** y **[Ubuntu]**, en cada una:
 
 ```bash
-ls ~/.ssh/rodo_vps.pub
+ls ~/.ssh/id_ed25519.pub
 ```
 
-- Si dice "No such file", creala (podés poner una frase de seguridad o dejarla vacía con Enter):
+- Si dice "No such file", creala (podés poner una frase de seguridad o dejarla vacía con Enter). Usá `salva-mac` en la Mac y `salva-ubuntu` en la notebook:
   ```bash
-  ssh-keygen -t ed25519 -C "salva-mac rodo" -f ~/.ssh/rodo_vps
+  ssh-keygen -t ed25519 -C "salva-mac" -f ~/.ssh/id_ed25519
   ```
 - Si ya existe, seguí.
 
@@ -165,34 +165,38 @@ id salva                        # tiene que aparecer "sudo" en la lista de grupo
 exit                            # salís del VPS
 ```
 
-### 2.4 Copiar tu llave al usuario `salva`
+### 2.4 Copiar tus llaves al usuario `salva`
 
-**[Mac]** (te pide la contraseña de `salva` **una última vez**):
+Desde **cada** computadora (te pide la contraseña de `salva`; es la última vez que entrás con contraseña):
 
 ```bash
-ssh-copy-id -i ~/.ssh/rodo_vps.pub -o IdentitiesOnly=yes -p 5460 salva@201.32.131.60
+ssh-copy-id -i ~/.ssh/id_ed25519.pub -o IdentitiesOnly=yes -p 5460 salva@201.32.131.60
 ```
+
+✅ **Comprobá** (ya dentro del VPS): `cat ~/.ssh/authorized_keys` muestra dos líneas, una que termina en `salva-mac` y otra en `salva-ubuntu`.
 
 ### 2.5 Atajo para conectarte
 
-**[Mac]**: abrí (o creá) `~/.ssh/config`:
+En **cada** computadora, abrí (o creá) `~/.ssh/config`:
 
 ```bash
 nano ~/.ssh/config
 ```
 
-Agregá al final (debajo de `vps-personal`, sin tocar los otros bloques):
+Agregá al final (en la Mac, debajo de `vps-personal`, sin tocar los otros bloques). El alias sigue el mismo estilo que `vps-personal`:
 
 ```
 Host vps-rodo
     HostName 201.32.131.60
     Port 5460
     User salva
-    IdentityFile ~/.ssh/rodo_vps
+    IdentityFile ~/.ssh/id_ed25519
     IdentitiesOnly yes
     AddKeysToAgent yes
     UseKeychain yes
 ```
+
+> **En la notebook Ubuntu, sacá la línea `UseKeychain yes`.** Es una opción solo de macOS (guarda la frase de la llave en el llavero). En Linux, SSH no la conoce y corta con `Bad configuration option: usekeychain`.
 
 Guardá con `Ctrl+O`, Enter, y salí con `Ctrl+X`.
 
@@ -202,7 +206,6 @@ Guardá con `Ctrl+O`, Enter, y salí con `Ctrl+X`.
 
 ```bash
 ssh vps-rodo            # entra SIN pedir contraseña
-sudo -v                 # (ya en el VPS) pide la contraseña de salva y no da error
 exit
 ```
 
@@ -213,6 +216,8 @@ exit
 ## 3. Primer ingreso al VPS y seguridad básica
 
 Conectate: **[Mac]** `ssh vps-rodo`. Desde acá, todo es **[VPS]** hasta que se diga lo contrario.
+
+> ⚠️ En los pasos 3.6 a 3.8 tocás la configuración de `sudo` y de SSH. Mientras los hacés, **dejá siempre abierta una sesión** del VPS y probá en **otra** terminal. Si algo sale mal, lo corregís desde la sesión que quedó abierta.
 
 ### 3.1 Ver qué hay instalado
 
@@ -225,6 +230,8 @@ ls /etc/nginx/sites-enabled/ 2>/dev/null
 ```
 
 > Si ves algo en los puertos 80, 443, 3000 o 5432, o hay sitios en `/etc/nginx/sites-enabled/` que no sean `default`, **frená y averiguá qué es** antes de seguir. Esta guía asume un VPS dedicado al sitio.
+>
+> En la imagen de DonWeb es normal ver `sshd` en los puertos **22 y 5460** y `master` (Postfix, el servidor de correo del sistema) en `0.0.0.0:25`. Se arreglan en los pasos 3.7 y 3.9.
 
 ### 3.2 Actualizar el sistema y la hora
 
@@ -248,6 +255,7 @@ sudo ufw allow 5460/tcp          # SSH (puerto de DonWeb)
 sudo ufw allow 80/tcp            # http (para certbot y redirigir a https)
 sudo ufw allow 443/tcp           # https
 sudo ufw enable                  # responde "y"
+sudo systemctl enable ufw        # que arranque solo después de cada reinicio
 sudo ufw status                  # tienen que aparecer 5460, 80 y 443 como ALLOW
 ```
 
@@ -257,7 +265,7 @@ sudo ufw status                  # tienen que aparecer 5460, 80 y 443 como ALLOW
 
 ### 3.4 Memoria de intercambio (swap)
 
-El build de la app usa bastante memoria. Si el VPS tiene poca RAM (2 GB o menos), el build puede cortarse con un error tipo `Killed`. Un archivo de swap de 2 GB lo evita:
+El build de la app usa bastante memoria. Aunque el plan tenga 8 GB, creamos igual un swap de 2 GB: es un colchón para cuando el build coincide con otra cosa pesada (en unas semanas se suma el sistema de gestión en este mismo VPS). Sin swap, el build puede cortarse con un error tipo `Killed`.
 
 ```bash
 free -h                                   # mirá la fila "Swap"
@@ -270,6 +278,14 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 free -h                                   # ahora Swap debería decir 2.0Gi
 ```
 
+Que el sistema use el swap solo cuando de verdad falte RAM (el valor por defecto, 60, lo usa antes de tiempo y todo se pone lento):
+
+```bash
+echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf
+sudo sysctl -p /etc/sysctl.d/99-swappiness.conf
+cat /proc/sys/vm/swappiness               # tiene que decir 10
+```
+
 ### 3.5 Actualizaciones de seguridad automáticas
 
 ```bash
@@ -277,26 +293,131 @@ sudo apt install -y unattended-upgrades
 sudo dpkg-reconfigure -plow unattended-upgrades   # elegí "Yes"
 ```
 
-### 3.6 Cerrar el ingreso de `root` y las contraseñas por SSH
+### 3.6 Que `sudo` pida contraseña
 
-Solo después de comprobar que entrás con la llave como `salva` (paso 2.5). Así nadie puede adivinar contraseñas ni entrar como `root`.
+La imagen de DonWeb trae esta línea en `/etc/sudoers` (línea 53):
+
+```
+%sudo   ALL=(ALL:ALL) NOPASSWD:ALL
+```
+
+Con eso, cualquiera del grupo `sudo` es administrador **sin contraseña**: si alguien te robara la llave SSH, tendría control total del servidor. Le sacamos el `NOPASSWD:`.
+
+`/etc/sudoers` no se edita directo: un error de tipeo ahí deja a todos sin `sudo`. Por eso trabajamos sobre una copia, la validamos con `visudo` y recién después la instalamos:
+
+```bash
+sudo grep -rn NOPASSWD /etc/sudoers /etc/sudoers.d/        # mirá dónde está
+sudo cp -a /etc/sudoers /root/sudoers.bak                   # respaldo del original (con NOPASSWD)
+sudo cp /etc/sudoers /tmp/sudoers.new
+sudo sed -i 's/^%sudo\s\+ALL=(ALL:ALL) NOPASSWD:ALL$/%sudo   ALL=(ALL:ALL) ALL/' /tmp/sudoers.new
+sudo visudo -cf /tmp/sudoers.new                            # tiene que decir "parsed OK"
+sudo install -m 440 -o root -g root /tmp/sudoers.new /etc/sudoers
+sudo rm /tmp/sudoers.new
+```
+
+> `install -m 440` copia el archivo con los permisos que exige `sudo` (solo lectura para root). Si `/etc/sudoers` quedara con otros permisos, `sudo` deja de funcionar.
+
+✅ **Comprobá**, en **otra** terminal (`ssh vps-rodo`):
+
+```bash
+sudo -k; sudo -v          # ahora SÍ pide la contraseña de salva, y la acepta
+sudo grep -rn NOPASSWD /etc/sudoers /etc/sudoers.d/        # no muestra nada
+```
+
+### 3.7 Quitar los accesos que deja DonWeb
+
+DonWeb deja **sus propios** accesos al servidor. Para que solo entres vos, los desactivamos:
+
+| Qué                                   | Qué hace                                                                                                                                 |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `/etc/ssh/sshd_config.d/80-step.conf` | Acepta certificados de una autoridad de DonWeb (`TrustedUserCAKeys` + `AuthorizedPrincipalsFile`): su personal entra sin una llave tuya. |
+| `/etc/ssh/sshd_config.d/custom.conf`  | `PermitRootLogin yes`.                                                                                                                   |
+| `/root/.ssh/authorized_keys`          | ~50 llaves de empleados de DonWeb que pueden entrar como root.                                                                           |
+| `Port 22` en `/etc/ssh/sshd_config`   | SSH también escucha en el 22, además del 5460.                                                                                           |
+
+Antes de tocar nada, respaldá toda la configuración de SSH:
+
+```bash
+sudo cp -a /etc/ssh /root/ssh.backup-$(date +%F)            # p. ej. /root/ssh.backup-2026-10-17
+```
+
+Mirá qué hay:
+
+```bash
+ls -l /etc/ssh/sshd_config.d/
+sudo cat /etc/ssh/sshd_config.d/80-step.conf /etc/ssh/sshd_config.d/custom.conf
+sudo wc -l /root/.ssh/authorized_keys
+grep -n '^Port' /etc/ssh/sshd_config      # aparecen "Port 22" y "Port 5460"
+```
+
+Desactivá los archivos de DonWeb. SSH solo lee los `*.conf` de esa carpeta, así que con renombrarlos alcanza (y se pueden volver a activar si hiciera falta):
+
+```bash
+sudo mv /etc/ssh/sshd_config.d/80-step.conf /etc/ssh/sshd_config.d/80-step.conf.disabled
+sudo mv /etc/ssh/sshd_config.d/custom.conf  /etc/ssh/sshd_config.d/custom.conf.disabled
+```
+
+Vaciá las llaves de root, dejando un respaldo:
+
+```bash
+sudo cp /root/.ssh/authorized_keys /root/authorized_keys.donweb.bak
+sudo chmod 600 /root/authorized_keys.donweb.bak
+sudo truncate -s 0 /root/.ssh/authorized_keys
+```
+
+Sacá el puerto 22. En Ubuntu 24.04, SSH arranca por **`ssh.socket`** (systemd escucha el puerto y despierta a `sshd`), y los puertos de ese socket se generan a partir de los `Port` de `/etc/ssh/sshd_config`. Por eso, después de cambiar el archivo hay que regenerarlo con `daemon-reload` y reiniciar el **socket** (no alcanza con reiniciar `ssh`):
+
+```bash
+sudo sed -i 's/^Port 22$/#Port 22/' /etc/ssh/sshd_config
+grep -n '^#\?Port' /etc/ssh/sshd_config   # "#Port 22" comentado y "Port 5460" activo
+sudo sshd -t                              # sin salida = sin errores
+sudo systemctl daemon-reload
+sudo systemctl restart ssh.socket
+sudo ss -tlnp | grep -E ':(22|5460)\b'    # solo tiene que aparecer el 5460
+```
+
+✅ **Comprobá:** en **otra** terminal, `ssh vps-rodo` sigue entrando.
+
+### 3.8 Cerrar el ingreso de `root` y las contraseñas por SSH
+
+Solo después de comprobar que entrás con la llave como `salva` (paso 2.5). Así nadie puede adivinar contraseñas ni entrar como `root`:
 
 ```bash
 sudo tee /etc/ssh/sshd_config.d/01-hardening.conf > /dev/null <<'EOF'
 PermitRootLogin no
 PasswordAuthentication no
 KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+AuthenticationMethods publickey
+TrustedUserCAKeys none
+AuthorizedPrincipalsFile none
+AllowUsers salva
+MaxAuthTries 3
+X11Forwarding no
+UseDNS no
+GSSAPIAuthentication no
 EOF
-sudo sshd -t && sudo systemctl reload ssh
+sudo sshd -t && sudo systemctl restart ssh
 ```
 
-> **Por qué el archivo se llama `01-…`:** SSH lee los archivos de `/etc/ssh/sshd_config.d/` en orden alfabético y se queda con el **primer** valor que encuentra. Ubuntu suele traer `50-cloud-init.conf` con `PasswordAuthentication yes`; si nuestro archivo se llamara `90-…`, ese "yes" ganaría.
+| Línea                                                                                             | Para qué                                                                                                           |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `PermitRootLogin no`                                                                              | Nadie entra como root.                                                                                             |
+| `PasswordAuthentication no`, `KbdInteractiveAuthentication no`, `AuthenticationMethods publickey` | Solo con llave: no hay contraseñas que adivinar.                                                                   |
+| `TrustedUserCAKeys none`, `AuthorizedPrincipalsFile none`                                         | Anula el acceso por certificados de DonWeb aunque reaparezca `80-step.conf` (por ejemplo, tras una actualización). |
+| `AllowUsers salva`                                                                                | Solo `salva` puede entrar por SSH, aunque se creen otros usuarios.                                                 |
+| `MaxAuthTries 3`                                                                                  | Corta la conexión tras 3 intentos fallidos.                                                                        |
+| `X11Forwarding no`, `UseDNS no`, `GSSAPIAuthentication no`                                        | Apaga funciones que no usamos (menos superficie de ataque y conexiones más rápidas).                               |
+
+> **Por qué el archivo se llama `01-…`:** SSH lee los archivos de `/etc/ssh/sshd_config.d/` en orden alfabético y se queda con el **primer** valor que encuentra. Ubuntu suele traer `50-cloud-init.conf` con `PasswordAuthentication yes`, y DonWeb trae `custom.conf` y `80-step.conf`. Si nuestro archivo se llamara `90-…`, esos valores ganarían.
 
 ✅ **Comprobá:**
 
 ```bash
-sudo sshd -T | grep -E "^(permitrootlogin|passwordauthentication)"
-# tiene que decir:  permitrootlogin no   y   passwordauthentication no
+sudo sshd -T | grep -E "^(port|permitrootlogin|passwordauthentication|authenticationmethods|trustedusercakeys|authorizedprincipalsfile|allowusers|maxauthtries) "
+# tiene que decir: port 5460 · permitrootlogin no · passwordauthentication no ·
+# authenticationmethods publickey · trustedusercakeys none · authorizedprincipalsfile none ·
+# allowusers salva · maxauthtries 3
 ```
 
 y, **sin cerrar la sesión actual**, en otra terminal de tu Mac:
@@ -307,6 +428,58 @@ ssh -o PubkeyAuthentication=no -p 5460 root@201.32.131.60   # tiene que decir "P
 ```
 
 > Si te quedaras afuera: panel de DonWeb → **consola** del VPS (entrás como root desde el navegador) y borrás `/etc/ssh/sshd_config.d/01-hardening.conf`.
+
+> **Respaldos que quedan en el VPS** (por si hay que volver atrás):
+>
+> | Archivo                             | Qué es                                                             |
+> | ----------------------------------- | ------------------------------------------------------------------ |
+> | `/root/ssh.backup-2026-10-17/`      | Copia de `/etc/ssh` antes de tocarlo (paso 3.7).                   |
+> | `/root/sudoers.bak`                 | `/etc/sudoers` original, con el `NOPASSWD` de DonWeb (paso 3.6).   |
+> | `/root/authorized_keys.donweb.bak`  | Las ~50 llaves de DonWeb que tenía root (paso 3.7).                |
+> | `/etc/ssh/sshd_config.d/*.disabled` | `80-step.conf` y `custom.conf` de DonWeb, desactivados (paso 3.7). |
+>
+> Están en `/root` (solo los lee root, con `sudo`). Si borrás alguno, no pasa nada con el sitio.
+
+### 3.9 Correo del sistema solo hacia adentro (Postfix)
+
+La imagen de DonWeb trae **Postfix** (un servidor de correo) escuchando en `0.0.0.0:25`, es decir, abierto a internet. La app **no** lo usa (los emails salen por Resend, paso 13), así que lo dejamos escuchando solo dentro del servidor:
+
+```bash
+sudo postconf -e 'inet_interfaces = loopback-only'
+sudo systemctl restart postfix
+sudo ss -tlnp | grep ':25\b'               # tiene que decir 127.0.0.1:25 (y [::1]:25), no 0.0.0.0:25
+```
+
+### 3.10 fail2ban: bloquear a quien insiste
+
+Aunque SSH ya no acepte contraseñas, los bots siguen intentando todo el día. **fail2ban** lee los registros de SSH y bloquea por 1 hora a la IP que falle 5 veces en 10 minutos:
+
+```bash
+sudo apt install -y fail2ban python3-systemd
+sudo tee /etc/fail2ban/jail.local > /dev/null <<'EOF'
+[DEFAULT]
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+backend  = systemd
+
+[sshd]
+enabled = true
+port    = 5460
+EOF
+sudo systemctl enable fail2ban
+sudo systemctl restart fail2ban
+```
+
+> `backend = systemd`: Ubuntu 24.04 guarda los registros de SSH en el journal de systemd, no en `/var/log/auth.log`. `port = 5460` tiene que coincidir con el puerto de SSH; si no, fail2ban bloquearía el 22, que ya no se usa.
+
+✅ **Comprobá:**
+
+```bash
+sudo fail2ban-client status sshd           # "Status for the jail: sshd" y la lista de IPs bloqueadas
+```
+
+> Si alguna vez te bloquea a vos (por ejemplo, tras varios intentos con la llave equivocada), entrá por la consola de DonWeb y desbloqueá tu IP con `sudo fail2ban-client set sshd unbanip <tu IP>`.
 
 ---
 
