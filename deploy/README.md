@@ -537,7 +537,12 @@ La primera vez pregunta si confiás en el servidor: escribí `yes`.
 
 ```bash
 git clone git@github.com:salvador-castro/mora-machado-construcciones.git /var/www/mora/repo
+git -C /var/www/mora/repo checkout develop
 ```
+
+> **Por qué el `checkout develop`:** el clon queda en `main`, la rama por defecto, que hasta el lanzamiento tiene el sitio viejo y **no** tiene la carpeta `deploy/`: sin este paso, `deploy.sh` no existe. Después del lanzamiento (`develop` mergeado en `main`, [paso 16.2](#162-pasar-el-código-a-main)) ya no hace falta.
+
+✅ **Comprobá:** `ls /var/www/mora/repo/deploy/deploy.sh` muestra el archivo.
 
 > Si alguna vez lo habías clonado con `https://`, cambiá la dirección con:
 > `git -C /var/www/mora/repo remote set-url origin git@github.com:salvador-castro/mora-machado-construcciones.git`
