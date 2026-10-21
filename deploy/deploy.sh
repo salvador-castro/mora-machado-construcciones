@@ -26,23 +26,29 @@ PREV="$(readlink -f "$APP_ROOT/current" 2>/dev/null || true)"
 git worktree add --detach "$REL" "$SHA"
 cd "$REL"
 ln -s "$APP_ROOT/shared/.env" .env
-set -a; . ./.env; set +a
 
-log "Instalando dependencias"
-pnpm install --frozen-lockfile
+# .env is exported only inside this subshell. If PM2 inherited these variables
+# it would pin them in its saved environment, and Node's --env-file never
+# overrides an existing variable, so later .env edits would be ignored.
+(
+  set -a; . ./.env; set +a
 
-log "Migraciones"
-# Before the build: prerendering reads the database with the new schema.
-# Keep migrations additive so the running release keeps working meanwhile.
-pnpm prisma migrate deploy
+  log "Instalando dependencias"
+  pnpm install --frozen-lockfile
 
-log "Contenido base"
-# Idempotent: full seed only on an empty database; otherwise it just adds
-# missing content blocks/fields and the brand assets (never overwrites edits).
-pnpm db:seed
+  log "Migraciones"
+  # Before the build: prerendering reads the database with the new schema.
+  # Keep migrations additive so the running release keeps working meanwhile.
+  pnpm prisma migrate deploy
 
-log "Build"
-pnpm build
+  log "Contenido base"
+  # Idempotent: full seed only on an empty database; otherwise it just adds
+  # missing content blocks/fields and the brand assets (never overwrites edits).
+  pnpm db:seed
+
+  log "Build"
+  pnpm build
+)
 cp -r public .next/standalone/
 cp -r .next/static .next/standalone/.next/
 
