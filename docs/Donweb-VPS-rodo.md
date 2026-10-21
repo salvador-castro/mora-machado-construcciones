@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `705cdb8 docs(deploy): Resend DNS records (CNAME format) loaded in Vercel`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `a8fc97c fix(emails): card padding on the cell so Roundcube keeps it`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -165,7 +165,7 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 1. ~~`git push -u origin develop`~~ ✅ hecho el 16/10/2026.
 2. ~~Configurar el VPS (pasos 2 a 11) con `develop` en `nuevo.moramachadoconstrucciones.com`~~ ✅ hecho el 17/10/2026; el sitio de prueba funciona.
 3. ~~Cargar MX/SPF/DKIM de Webempresa en Vercel (paso 12)~~ hecho y verificado 20/10/2026 (entra a info@; sale con SPF/DKIM/DMARC en PASS).
-4. Resend: dominio, DNS, API key (paso 13).
+4. ~~Resend: dominio, DNS, API key (paso 13)~~ hecho y probado 20/10/2026.
 5. Backups a Google Drive con rclone (paso 14).
 6. Monitoreo UptimeRobot sobre `/healthz` (paso 15).
 7. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).

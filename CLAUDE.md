@@ -123,8 +123,8 @@ F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F
 - Código terminado (F1–F10) y **`develop` en GitHub**. Sitio viejo sigue en Vercel; `main` = sitio viejo hasta el lanzamiento.
 - Documentación para el deploy en `docs/`: `guia-deploy-vps.pdf` (= `deploy/README.md`), `Donweb-VPS-rodo.md` / `.pdf` (contexto completo + copias de `deploy/`, para el proyecto "Donweb-VPS-rodo" de Claude online). Regenerar PDFs: `pnpm docs:pdf`. `docs/Donweb-VPS-rodo.md`: la parte 1 (contexto) se edita a mano; las partes 2–3 (guía + archivos de `deploy/`) las regenera `pnpm docs:pdf`.
 - VPS configurado (pasos 2–11, 17/10/2026): el sitio de prueba funciona en `https://nuevo.moramachadoconstrucciones.com` (rama `develop`). En el VPS la infraestructura se llama **mora** (`/var/www/mora`, PM2 `mora`, `mora_prod`, `mora.conf`, `github_mora`, `gdrive:mora-backups`); el único nombre «rodo» es el alias SSH `vps-rodo`.
-- Correo de las casillas verificado 20/10/2026: entra a info@ y lo que sale pasa SPF/DKIM/DMARC en Gmail. Próximo: Resend; backups a Google Drive; lanzamiento con OK del cliente (paso 16).
-- No probado aún en servidor real: rollback de `deploy.sh`, `pm2 reload` en un segundo deploy, workflow de CI, cron de backups.
+- Correo de las casillas verificado 20/10/2026: entra a info@ y lo que sale pasa SPF/DKIM/DMARC en Gmail. Resend verificado 20/10/2026 (key en `shared/.env`, email de prueba OK). Próximo: backups a Google Drive; lanzamiento con OK del cliente (paso 16).
+- Probado en el VPS: segundo deploy con `pm2 reload` (20/10/2026). No probado aún: rollback de `deploy.sh`, workflow de CI, cron de backups.
 - Pendientes de contenido del cliente: fotos en alta, revisar textos `// DRAFT`, rangos de presupuesto, alts de galería, color de acento (por ahora queda el actual).
 
 ## Entorno: iCloud
