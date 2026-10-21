@@ -70,14 +70,14 @@ Esta guía está pensada para alguien que **hace su primer deploy en un VPS**. E
 | **DNS (los registros)**       | **Vercel**: los nameservers son `ns1.vercel-dns.com` y `ns2.vercel-dns.com`. Los registros se editan en el panel de Vercel → **Domains**.       |
 | Sitio web viejo               | Vercel.                                                                                                                                         |
 | Casillas info@, sofia@, rodo@ | **Webempresa**.                                                                                                                                 |
-| Registros MX                  | ⚠️ **No hay ninguno.** Con el DNS así, a esas casillas **no les llegan emails**. Se arregla en el [paso 12](#12-emails-casillas-en-webempresa). |
+| Registros MX                  | Hasta el 20/10/2026 **no había ninguno** (a esas casillas no les llegaban emails). Ese día se cargaron en Vercel ([paso 12](#12-emails-casillas-en-webempresa)). |
 
 > Podés verlo vos mismo en cualquier momento **[Mac]**:
 >
 > ```bash
 > dig +short NS moramachadoconstrucciones.com     # quién maneja el DNS
 > dig +short A  moramachadoconstrucciones.com     # a qué IP apunta el sitio
-> dig +short MX moramachadoconstrucciones.com     # a dónde van los emails (hoy: vacío)
+> dig +short MX moramachadoconstrucciones.com     # a dónde van los emails (Webempresa)
 > ```
 
 ### Datos del VPS (DonWeb)
@@ -883,7 +883,22 @@ Cuando todo esté bien, el cliente puede cargar el contenido real en este mismo 
 
 ## 12. Emails: casillas en Webempresa
 
-Las casillas info@, sofia@ y rodo@ están en **Webempresa**. Para que les lleguen emails, el DNS (que está en Vercel) tiene que decir "los emails de este dominio van a Webempresa". **Hoy ese registro no existe**, así que conviene resolverlo cuanto antes, aunque el sitio siga en Vercel: no depende del VPS.
+Las casillas info@, sofia@ y rodo@ están en **Webempresa**. Para que les lleguen emails, el DNS (que está en Vercel) tiene que decir "los emails de este dominio van a Webempresa". No depende del VPS: se hace aunque el sitio siga en Vercel.
+
+> ✅ **Hecho el 20/10/2026.** Registros cargados en Vercel (copiados de la zona de Webempresa, `ns2011.webempresa.eu`):
+>
+> | Tipo  | Name                 | Valor                                                                    |
+> | ----- | -------------------- | ------------------------------------------------------------------------ |
+> | `A`   | `mail`               | `198.27.88.204`                                                          |
+> | `A`   | `webmail`            | `198.27.88.204`                                                          |
+> | `MX`  | _(vacío = raíz)_     | `mail.moramachadoconstrucciones.com`, prioridad `0`                      |
+> | `TXT` | _(vacío = raíz)_     | `v=spf1 +mx +ip4:15.235.53.80 include:_spf.webempresa.eu ~all`           |
+> | `TXT` | `default._domainkey` | `v=DKIM1; k=rsa; p=MIIBIjAN…` (copiado del editor de zona de Webempresa) |
+> | `TXT` | `_dmarc`             | `v=DMARC1; p=none`                                                       |
+>
+> Diferencias con la zona de Webempresa: el SPF va **sin `+a`** (la raíz apunta al sitio web, que no manda mail) y el DKIM **sin la `\` final** (en Webempresa es un escape; en otro panel quedaría como carácter literal y rompería la firma). `ftp`, `wepanel` y `bluepanel` no hacen falta para el correo. Estos mismos registros se copian a DonWeb en el [paso 16.8](#168-mudar-el-dns-a-donweb-unos-días-después).
+>
+> Lo que sigue abajo queda como referencia por si alguna vez cambian los valores de Webempresa.
 
 ### 12.1 Averiguar qué registros pide Webempresa
 
@@ -1117,6 +1132,20 @@ Para enterarte si el sitio se cae **antes que el cliente**:
 
 Hacelo en un horario tranquilo (por ejemplo, un martes a la mañana) y con tiempo para revisar.
 
+**Cómo queda todo al final:**
+
+```
+GoDaddy (registro del dominio)
+  └─ nameservers → DonWeb (DNS)
+       ├─ web (raíz y www)        → VPS DonWeb 201.32.131.60
+       └─ emails (mail, MX, SPF…) → Webempresa 198.27.88.204
+```
+
+Vercel deja de participar. Se hace en **dos etapas separadas**, para cambiar una sola cosa por vez:
+
+1. **Lanzamiento (16.1–16.7):** el sitio pasa al VPS. El DNS sigue en Vercel; solo cambian la raíz y `www`.
+2. **Mudanza del DNS (16.8), unos días después:** con el sitio ya estable, el DNS pasa de Vercel a DonWeb. Si las dos zonas son idénticas, nadie lo nota.
+
 ### 16.1 Un día antes
 
 - **Vercel → DNS Records:** bajá el **TTL** de los registros del dominio a `60` (si se puede editar). Así el cambio se nota en minutos y no en horas.
@@ -1216,7 +1245,77 @@ Es necesario porque `SITE_URL` y `SITE_NOINDEX` cambiaron, y se leen al buildear
 - [ ] El monitor de UptimeRobot apunta al dominio principal.
 - [ ] **Google Search Console:** agregá la propiedad del dominio y enviá `https://moramachadoconstrucciones.com/sitemap.xml`.
 
-### 16.8 Después del lanzamiento
+### 16.8 Mudar el DNS a DonWeb (unos días después)
+
+Con el sitio andando en el VPS, el DNS pasa de Vercel a DonWeb. La regla es una sola: **primero se arma la zona completa en DonWeb, se comprueba que responde igual que Vercel, y recién después se cambian los nameservers en GoDaddy.** Durante la propagación (hasta 24–48 h) algunos van a consultar Vercel y otros DonWeb; si las dos dicen lo mismo, ni la web ni el mail se cortan.
+
+#### 16.8.1 Armar la zona en DonWeb
+
+Panel de **DonWeb** → **DNS** del dominio `moramachadoconstrucciones.com`. La zona ya existe, pero hoy está **mal para el correo**: tiene el MX y `mail` apuntando al VPS (que no recibe emails) y un SPF que no es el de Webempresa. Dejala **exactamente** así:
+
+| Tipo  | Name                 | Valor                                                          | Para qué           |
+| ----- | -------------------- | -------------------------------------------------------------- | ------------------ |
+| `A`   | _(raíz)_             | `201.32.131.60`                                                | web → VPS          |
+| `A`   | `www`                | `201.32.131.60`                                                | web → VPS          |
+| `A`   | `mail`               | `198.27.88.204`                                                | mail → Webempresa  |
+| `A`   | `webmail`            | `198.27.88.204`                                                | webmail Webempresa |
+| `MX`  | _(raíz)_             | `mail.moramachadoconstrucciones.com`, prioridad `0`            | mail → Webempresa  |
+| `TXT` | _(raíz)_             | `v=spf1 +mx +ip4:15.235.53.80 include:_spf.webempresa.eu ~all` | SPF Webempresa     |
+| `TXT` | `default._domainkey` | DKIM de Webempresa (el mismo que está en Vercel)               | DKIM Webempresa    |
+| `TXT` | `_dmarc`             | el mismo valor que está en Vercel                              | DMARC              |
+| `TXT` | `resend._domainkey`  | el mismo valor que está en Vercel (paso 13)                    | DKIM Resend        |
+| `MX`  | `send`               | el mismo valor y prioridad que en Vercel (paso 13)             | rebotes Resend     |
+| `TXT` | `send`               | el mismo valor que está en Vercel (paso 13)                    | SPF Resend         |
+
+- **Borrá** cualquier otro `MX`, cualquier otro `TXT` con `v=spf1` en la raíz y cualquier `A`/`CNAME` de `mail` que apunte al VPS. Solo puede haber **un** SPF en la raíz.
+- Si dejaste el subdominio de prueba, sumá `nuevo` → `A` → `201.32.131.60`.
+- Los valores largos (DKIM) copialos desde **Vercel → DNS Records** (o con `dig`), no a mano.
+- Anotá los **nameservers de DonWeb** que muestra el panel (los vas a necesitar en 16.8.2 y 16.8.3).
+
+✅ **Comprobá [Mac]** que DonWeb responde **lo mismo** que Vercel. Reemplazá `<NS_DONWEB>` por uno de los nameservers de DonWeb:
+
+```bash
+D=moramachadoconstrucciones.com; NEW=<NS_DONWEB>
+for t n in A $D A www.$D A mail.$D A webmail.$D MX $D TXT $D TXT default._domainkey.$D \
+           TXT _dmarc.$D TXT resend._domainkey.$D MX send.$D TXT send.$D; do
+  a=$(dig +short $t $n @ns1.vercel-dns.com | tr -d '" \n')
+  b=$(dig +short $t $n @$NEW | tr -d '" \n')
+  [ "$a" = "$b" ] && echo "OK    $t $n" || echo "DISTINTO  $t $n"
+done
+```
+
+Tienen que salir **todas `OK`**. Si alguna dice `DISTINTO`, corregila en DonWeb antes de seguir.
+
+#### 16.8.2 Cambiar los nameservers en GoDaddy
+
+**GoDaddy** → **Mis productos** → `moramachadoconstrucciones.com` → **DNS** → **Servidores de nombres** → **Cambiar** → **Usaré mis propios servidores de nombres** → cargá los de DonWeb (borrando los `ns*.vercel-dns.com`) → **Guardar**.
+
+> ⚠️ **No quites el dominio de la cuenta de Vercel todavía.** Mientras dure la propagación, una parte de internet sigue consultando la zona de Vercel; si la borrás, a esa gente se le cae la web y el mail.
+
+#### 16.8.3 Comprobar
+
+**[Mac]**, a partir del rato y hasta 48 h después:
+
+```bash
+dig +short NS moramachadoconstrucciones.com @8.8.8.8    # los de DonWeb
+dig +short MX moramachadoconstrucciones.com @8.8.8.8    # 0 mail.moramachadoconstrucciones.com.
+dig +short moramachadoconstrucciones.com @8.8.8.8       # 201.32.131.60
+```
+
+- [ ] La web carga con candadito.
+- [ ] Un email desde Gmail a info@ llega al webmail de Webempresa.
+- [ ] Una consulta del formulario llega a info@ (Resend).
+- [ ] En Resend, el dominio sigue **Verified**.
+
+Los certificados de Let's Encrypt **no** se ven afectados: certbot valida por HTTP (puerto 80), no por DNS.
+
+#### 16.8.4 Sacar el dominio de Vercel
+
+Cuando pasaron **48 h** y todo lo de 16.8.3 dio bien: **Vercel** → **Domains** → `moramachadoconstrucciones.com` → **Remove**. Ahora sí se puede quitar de la cuenta: el DNS ya vive en DonWeb.
+
+> Desde acá, cualquier registro nuevo (por ejemplo, si cambia algo de Webempresa o de Resend) se carga en el **panel de DonWeb**, no en Vercel.
+
+### 16.9 Después del lanzamiento
 
 - **Subdominio de prueba:** podés dejarlo o quitarlo:
   ```bash
@@ -1224,11 +1323,9 @@ Es necesario porque `SITE_URL` y `SITE_NOINDEX` cambiaron, y se leen al buildear
   sudo nginx -t && sudo systemctl reload nginx
   sudo certbot delete --cert-name nuevo.moramachadoconstrucciones.com
   ```
-  y borrá el registro `nuevo` en Vercel.
+  y borrá el registro `nuevo` en el DNS (Vercel o DonWeb, según dónde esté en ese momento).
 - **Repo privado:** GitHub → repo → **Settings** → **Danger Zone** → **Change visibility** → Private. El VPS ya usa la deploy key (paso 7), así que no se rompe nada.
-- **Proyecto viejo de Vercel:** se puede borrar el **proyecto** (no el dominio de la cuenta: ahí vive el DNS). En el repo local, borrá la carpeta `.vercel/`.
-
-> **¿Sacar el DNS de Vercel?** Es opcional. El DNS de Vercel es gratis y funciona aunque no alojes nada ahí. Si algún día lo querés mover (a GoDaddy, Webempresa o Cloudflare), primero recreá **todos** los registros en el proveedor nuevo y recién después cambiá los nameservers en GoDaddy.
+- **Proyecto viejo de Vercel:** se puede borrar el **proyecto** en cualquier momento (no el dominio de la cuenta hasta terminar el 16.8). En el repo local, borrá la carpeta `.vercel/`.
 
 ---
 
