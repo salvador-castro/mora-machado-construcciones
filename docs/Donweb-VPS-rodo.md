@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `a8fc97c fix(emails): card padding on the cell so Roundcube keeps it`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `528e8fc docs: regenerate deploy guide PDF`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -156,9 +156,9 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 
 **No probado todavía:**
 
-- Rollback automático de `deploy.sh` cuando `/healthz` falla, y `pm2 reload` en un segundo deploy.
+- Rollback automático de `deploy.sh` cuando `/healthz` falla (el segundo deploy con `pm2 reload` sí se probó el 20/10/2026).
 - El workflow de CI.
-- Backup automático del cron y copia a Google Drive (paso 14).
+- Restaurar un backup en el VPS (14.5).
 
 **Pasos pendientes, en orden:**
 
@@ -166,7 +166,7 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 2. ~~Configurar el VPS (pasos 2 a 11) con `develop` en `nuevo.moramachadoconstrucciones.com`~~ ✅ hecho el 17/10/2026; el sitio de prueba funciona.
 3. ~~Cargar MX/SPF/DKIM de Webempresa en Vercel (paso 12)~~ hecho y verificado 20/10/2026 (entra a info@; sale con SPF/DKIM/DMARC en PASS).
 4. ~~Resend: dominio, DNS, API key (paso 13)~~ hecho y probado 20/10/2026.
-5. Backups a Google Drive con rclone (paso 14).
+5. ~~Backups a Google Drive con rclone (paso 14)~~ hecho y probado 21/10/2026 (cron local OK desde el 18/10; copia en `gdrive:mora-backups`).
 6. Monitoreo UptimeRobot sobre `/healthz` (paso 15).
 7. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).
 
@@ -1196,6 +1196,8 @@ Todas las noches a las 03:15, `deploy/backup.sh` guarda:
 - las **fotos subidas** (`uploads-AAAA-MM-DD.tar.gz`)
 
 en `/var/www/mora/backups` (se borran a los 14 días). Pero si el VPS se rompe o se pierde, esas copias se pierden con él. Por eso las copiamos también a **tu Google Drive** con `rclone`.
+
+> ✅ **Hecho el 21/10/2026.** Remoto `gdrive` (scope `drive.file`) en el VPS, `BACKUP_RCLONE_REMOTE="gdrive:mora-backups"` y backup de prueba subido a Drive.
 
 ### 14.1 Instalar rclone en tu Mac
 

@@ -1013,6 +1013,8 @@ Todas las noches a las 03:15, `deploy/backup.sh` guarda:
 
 en `/var/www/mora/backups` (se borran a los 14 días). Pero si el VPS se rompe o se pierde, esas copias se pierden con él. Por eso las copiamos también a **tu Google Drive** con `rclone`.
 
+> ✅ **Hecho el 21/10/2026.** Remoto `gdrive` (scope `drive.file`) en el VPS, `BACKUP_RCLONE_REMOTE="gdrive:mora-backups"` y backup de prueba subido a Drive.
+
 ### 14.1 Instalar rclone en tu Mac
 
 El VPS no tiene navegador, así que el permiso de Google se da desde tu Mac. **[Mac]**:
