@@ -1,4 +1,14 @@
-import { Body, Container, Head, Html, Preview, Section, Text } from "@react-email/components";
+import {
+  Body,
+  Column,
+  Container,
+  Head,
+  Html,
+  Preview,
+  Row,
+  Section,
+  Text,
+} from "@react-email/components";
 
 const INK = "#111a0d";
 const PAPER = "#f4f3f0";
@@ -24,10 +34,11 @@ export function EmailLayout({
           <Text style={{ fontSize: 13, letterSpacing: 1, textTransform: "uppercase", color: INK }}>
             {brandName}
           </Text>
-          <Section
-            style={{ backgroundColor: "#ffffff", padding: "24px", border: `1px solid ${INK}1f` }}
-          >
-            {children}
+          {/* Padding on the cell, not the table: Roundcube and others drop table padding. */}
+          <Section style={{ backgroundColor: "#ffffff", border: `1px solid ${INK}1f` }}>
+            <Row>
+              <Column style={{ padding: "24px" }}>{children}</Column>
+            </Row>
           </Section>
         </Container>
       </Body>
