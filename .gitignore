@@ -51,3 +51,6 @@ next-env.d.ts
 /src/generated
 .claude/settings.local.json
 tests/e2e/.auth
+
+# Client documents (may hold personal data; the repo is public until launch)
+docs/*.docx
