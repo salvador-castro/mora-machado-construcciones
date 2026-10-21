@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `9a1b15d docs: VPS steps 2–11 done, staging live; regenerate PDFs`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `90f9b72 docs(deploy): mail DNS loaded in Vercel (step 12) and plan to move DNS to DonWeb (16.8)`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -1132,18 +1132,20 @@ El sitio **envía** emails (el aviso de cada consulta a info@ y el email de prue
 2. Elegí una región (la que sugiera; no se cambia después).
 3. Resend te muestra **3 registros**. Tienen esta forma (**copiá los valores exactos de tu panel**):
 
-| Tipo  | Name (en Vercel)    | Valor                                  | Prioridad | Para qué                                    |
-| ----- | ------------------- | -------------------------------------- | --------- | ------------------------------------------- |
-| `TXT` | `resend._domainkey` | `p=MIGfMA0GCSq…` (largo)               | —         | **DKIM**: firma los emails como del dominio |
-| `MX`  | `send`              | `feedback-smtp.<región>.amazonses.com` | `10`      | Avisos de rebote del subdominio de envío    |
-| `TXT` | `send`              | `v=spf1 include:amazonses.com ~all`    | —         | **SPF** del subdominio de envío             |
+| Tipo    | Name (en Vercel)    | Valor                       | Para qué                                    |
+| ------- | ------------------- | --------------------------- | ------------------------------------------- |
+| `TXT`   | `resend._domainkey` | `p=MIGfMA0GCSq…` (largo)    | **DKIM**: firma los emails como del dominio |
+| `CNAME` | `send`              | `send.forge.rmta.net`       | **SPF** y rebotes del subdominio de envío   |
+| `CNAME` | `rsend`             | `rsend-sae1.forge.rmta.net` | ídem (el `sae1` depende de la región)       |
+
+> ✅ **Hecho el 20/10/2026** (región São Paulo, `sa-east-1`). Versiones anteriores de Resend pedían un `MX` y un `TXT` en `send` en vez de los `CNAME`: cargá lo que muestre tu panel.
 
 4. Cargalos en **Vercel → DNS Records** igual que en el paso 12.2.
 5. Volvé a Resend y tocá **Verify**. Puede tardar de minutos a unas horas en quedar **Verified**.
 
 ### ⚠️ No tocar los registros de la raíz
 
-- Los registros de Resend van en **`send`** y en **`resend._domainkey`** (subdominios). **No** modifican el **MX de la raíz**, que es el de Webempresa (paso 12).
+- Los registros de Resend van en **`send`**, **`rsend`** y **`resend._domainkey`** (subdominios). **No** modifican el **MX de la raíz**, que es el de Webempresa (paso 12).
 - **No** agregues `include:amazonses.com` al SPF de la raíz.
 - Si algún panel ofrece "reemplazar los registros MX existentes", **no** aceptes.
 
@@ -1437,19 +1439,19 @@ Con el sitio andando en el VPS, el DNS pasa de Vercel a DonWeb. La regla es una 
 
 Panel de **DonWeb** → **DNS** del dominio `moramachadoconstrucciones.com`. La zona ya existe, pero hoy está **mal para el correo**: tiene el MX y `mail` apuntando al VPS (que no recibe emails) y un SPF que no es el de Webempresa. Dejala **exactamente** así:
 
-| Tipo  | Name                 | Valor                                                          | Para qué           |
-| ----- | -------------------- | -------------------------------------------------------------- | ------------------ |
-| `A`   | _(raíz)_             | `201.32.131.60`                                                | web → VPS          |
-| `A`   | `www`                | `201.32.131.60`                                                | web → VPS          |
-| `A`   | `mail`               | `198.27.88.204`                                                | mail → Webempresa  |
-| `A`   | `webmail`            | `198.27.88.204`                                                | webmail Webempresa |
-| `MX`  | _(raíz)_             | `mail.moramachadoconstrucciones.com`, prioridad `0`            | mail → Webempresa  |
-| `TXT` | _(raíz)_             | `v=spf1 +mx +ip4:15.235.53.80 include:_spf.webempresa.eu ~all` | SPF Webempresa     |
-| `TXT` | `default._domainkey` | DKIM de Webempresa (el mismo que está en Vercel)               | DKIM Webempresa    |
-| `TXT` | `_dmarc`             | el mismo valor que está en Vercel                              | DMARC              |
-| `TXT` | `resend._domainkey`  | el mismo valor que está en Vercel (paso 13)                    | DKIM Resend        |
-| `MX`  | `send`               | el mismo valor y prioridad que en Vercel (paso 13)             | rebotes Resend     |
-| `TXT` | `send`               | el mismo valor que está en Vercel (paso 13)                    | SPF Resend         |
+| Tipo    | Name                 | Valor                                                          | Para qué           |
+| ------- | -------------------- | -------------------------------------------------------------- | ------------------ |
+| `A`     | _(raíz)_             | `201.32.131.60`                                                | web → VPS          |
+| `A`     | `www`                | `201.32.131.60`                                                | web → VPS          |
+| `A`     | `mail`               | `198.27.88.204`                                                | mail → Webempresa  |
+| `A`     | `webmail`            | `198.27.88.204`                                                | webmail Webempresa |
+| `MX`    | _(raíz)_             | `mail.moramachadoconstrucciones.com`, prioridad `0`            | mail → Webempresa  |
+| `TXT`   | _(raíz)_             | `v=spf1 +mx +ip4:15.235.53.80 include:_spf.webempresa.eu ~all` | SPF Webempresa     |
+| `TXT`   | `default._domainkey` | DKIM de Webempresa (el mismo que está en Vercel)               | DKIM Webempresa    |
+| `TXT`   | `_dmarc`             | el mismo valor que está en Vercel                              | DMARC              |
+| `TXT`   | `resend._domainkey`  | el mismo valor que está en Vercel (paso 13)                    | DKIM Resend        |
+| `CNAME` | `send`               | `send.forge.rmta.net`                                          | SPF/rebotes Resend |
+| `CNAME` | `rsend`              | `rsend-sae1.forge.rmta.net`                                    | SPF/rebotes Resend |
 
 - **Borrá** cualquier otro `MX`, cualquier otro `TXT` con `v=spf1` en la raíz y cualquier `A`/`CNAME` de `mail` que apunte al VPS. Solo puede haber **un** SPF en la raíz.
 - Si dejaste el subdominio de prueba, sumá `nuevo` → `A` → `201.32.131.60`.
@@ -1461,7 +1463,7 @@ Panel de **DonWeb** → **DNS** del dominio `moramachadoconstrucciones.com`. La 
 ```bash
 D=moramachadoconstrucciones.com; NEW=<NS_DONWEB>
 for t n in A $D A www.$D A mail.$D A webmail.$D MX $D TXT $D TXT default._domainkey.$D \
-           TXT _dmarc.$D TXT resend._domainkey.$D MX send.$D TXT send.$D; do
+           TXT _dmarc.$D TXT resend._domainkey.$D CNAME send.$D CNAME rsend.$D; do
   a=$(dig +short $t $n @ns1.vercel-dns.com | tr -d '" \n')
   b=$(dig +short $t $n @$NEW | tr -d '" \n')
   [ "$a" = "$b" ] && echo "OK    $t $n" || echo "DISTINTO  $t $n"
