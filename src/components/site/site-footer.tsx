@@ -107,9 +107,7 @@ export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
             <p>
               Página Web Diseñada por{" "}
               <a
-                href="https://salvacastro.com.ar"
-                target="_blank"
-                rel="noopener"
+                href="https://www.salvacastro.com.ar/servicios/paginas-web"
                 className="font-medium text-paper hover:underline"
               >
                 SALVACASTRO
