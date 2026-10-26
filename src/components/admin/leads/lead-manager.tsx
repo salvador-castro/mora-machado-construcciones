@@ -51,8 +51,7 @@ export function LeadManager({
     startTransition(async () => {
       const res = await setLeadStatus(id, next);
       if (res.ok) {
-        toast.success(res.message);
-        router.refresh(); // sidebar badge of new leads
+        toast.success(res.message); // the action refreshes the panel (badge included)
       } else {
         setStatus(previous);
         toast.error(res.error);
