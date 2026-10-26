@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `0023183 docs: UptimeRobot monitor active on /healthz (step 15)`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `61d4346 fix(deps): next 16.4.3 and sanitize-html 2.18.1 (security advisories)`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -167,7 +167,7 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 4. ~~Resend: dominio, DNS, API key (paso 13)~~ hecho y probado 20/10/2026.
 5. ~~Backups a Google Drive con rclone (paso 14)~~ hecho y probado 21/10/2026 (cron local OK desde el 18/10; copia en `gdrive:mora-backups`).
 6. ~~Monitoreo UptimeRobot sobre `/healthz` (paso 15)~~ ✅ activo, verificado el 26/10/2026 (`HEAD /healthz` cada 5 min → 200). Al lanzar, cambiar la URL del monitor al dominio principal.
-7. Contenido del cuestionario del cliente (26/10/2026): deployar `develop` (trae la migración `opening_hours`), sumar `LEAD_CONFIRMATION_EMAIL="true"` y `LEAD_RETENTION_DAYS="730"` a `shared/.env`, y correr **una vez** `cd /var/www/mora/current && pnpm content:client-answers` (guía, paso 17).
+7. ~~Contenido del cuestionario del cliente~~ ✅ aplicado en el VPS el 26/10/2026 (`pnpm content:client-answers` + `pm2 reload mora`, que es obligatorio después de un script de contenido porque la caché vive en memoria).
 8. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).
 
 **Cuestionario del cliente (respondido el 26/10/2026)** → `prisma/content/client-answers.ts`: ubicación Tali Puerto (Camino de la Costa Brava km 6,5, Zárate), horario L–V 8–17 y S 8–13, obras en todo el país, Instagram y TikTok `moramachadoconstrucciones`, barra «Agenda abierta para obras 2027» activa, formulario sin rangos de presupuesto, acuse por email a quien consulta, diferencial «Llave en mano», servicios nuevos «Plateas y pisos de hormigón» (el que más quieren vender) y «Pulido de pisos», obra «Pisos, veredas y calles de acceso» (Parque Industrial Zárate, 2026, 3.800 m², 30 días; oculta hasta tener fotos), historia desde 2001 en Nosotros, responsable de datos en la política de privacidad (Rodolfo Daniel Machado, CUIT 20-25661207-1, con el domicilio comercial; consultas guardadas 2 años) y blog oculto. Lo revisan Rodo y Sofi juntos para dar el OK.
@@ -1550,11 +1550,14 @@ Algunos cambios de contenido vienen en un script en lugar de cargarse a mano en 
 
 ```bash
 cd /var/www/mora/current && pnpm content:client-answers
+pm2 reload mora          # obligatorio: la app guarda el contenido en caché en memoria
 ```
 
-| Script                   | Qué carga                                                                                 | Estado              |
-| ------------------------ | ----------------------------------------------------------------------------------------- | ------------------- |
-| `content:client-answers` | Respuestas del cuestionario del cliente (26/10/2026): `prisma/content/client-answers.ts`. | Pendiente en el VPS |
+> **Por qué el `pm2 reload`:** cuando se guarda desde el admin, la app limpia su caché sola. Un script escribe directo en la base y la app no se entera: sin el reload, el sitio sigue mostrando el contenido viejo.
+
+| Script                   | Qué carga                                                                                 | Estado                 |
+| ------------------------ | ----------------------------------------------------------------------------------------- | ---------------------- |
+| `content:client-answers` | Respuestas del cuestionario del cliente (26/10/2026): `prisma/content/client-answers.ts`. | Aplicado el 26/10/2026 |
 
 ### Volver a la versión anterior
 

@@ -1363,11 +1363,14 @@ Algunos cambios de contenido vienen en un script en lugar de cargarse a mano en 
 
 ```bash
 cd /var/www/mora/current && pnpm content:client-answers
+pm2 reload mora          # obligatorio: la app guarda el contenido en caché en memoria
 ```
 
-| Script                   | Qué carga                                                                                 | Estado              |
-| ------------------------ | ----------------------------------------------------------------------------------------- | ------------------- |
-| `content:client-answers` | Respuestas del cuestionario del cliente (26/10/2026): `prisma/content/client-answers.ts`. | Pendiente en el VPS |
+> **Por qué el `pm2 reload`:** cuando se guarda desde el admin, la app limpia su caché sola. Un script escribe directo en la base y la app no se entera: sin el reload, el sitio sigue mostrando el contenido viejo.
+
+| Script                   | Qué carga                                                                                 | Estado                 |
+| ------------------------ | ----------------------------------------------------------------------------------------- | ---------------------- |
+| `content:client-answers` | Respuestas del cuestionario del cliente (26/10/2026): `prisma/content/client-answers.ts`. | Aplicado el 26/10/2026 |
 
 ### Volver a la versión anterior
 

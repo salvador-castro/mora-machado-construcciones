@@ -60,7 +60,7 @@ pnpm content:client-answers # aplica las respuestas del cuestionario del cliente
 - Imágenes: `src/lib/media/process.ts` (sharp, valida formato real, variantes WebP en `UPLOAD_DIR/yyyy/mm/<uuid>-<w>.webp`, sin upscaling). Media referenciada desde JSON de `PageContent` (`*Id`) no tiene FK: el chequeo de uso debe escanear esos JSON.
 - Scripts CLI importan `@/lib/db-client` (no `@/lib/db`, que es `server-only`).
 - Texto marcado `// DRAFT` en `prisma/seed.ts` y `prisma/content/client-answers.ts` fue redactado por nosotros; pendiente de revisión del cliente (ver `SiteSettings.pendingTodos`).
-- Contenido que llega del cliente en bloque: módulo en `prisma/content/` con una función idempotente que llama el seed (base vacía) y un script `pnpm content:*` para la base del VPS, que se corre **una vez** (pisa los campos que toca). Ej.: `client-answers.ts` (cuestionario del 26/10/2026).
+- Contenido que llega del cliente en bloque: módulo en `prisma/content/` con una función idempotente que llama el seed (base vacía) y un script `pnpm content:*` para la base del VPS, que se corre **una vez** (pisa los campos que toca) y **después `pm2 reload mora`**: escribe directo en la base sin `updateTag`, y la caché de `'use cache'` vive en memoria del proceso. Ej.: `client-answers.ts` (cuestionario del 26/10/2026).
 - Blog: el link del menú/footer sale de `navLinks({ blog })` y solo aparece si hay notas publicadas; `/blog` vacío lleva `noindex`. Hoy el cliente lo quiere oculto (sin notas).
 - HTML de editor rico siempre sanitizado antes de renderizar.
 - Commit por fase en `develop`. `main` conserva el sitio estático viejo (HTML + 11 imágenes en `public/img/`) hasta el lanzamiento.
