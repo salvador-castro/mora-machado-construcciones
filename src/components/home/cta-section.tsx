@@ -5,14 +5,23 @@ import type { PageContentData } from "@/lib/content/schemas";
 
 type Testimonial = { quote: string; author: string; role: string | null };
 
+/**
+ * Closing call to action, shared by the home and the inner pages. Its link is
+ * edited once (home.cta) and usually points to a home anchor (#contacto), which
+ * only exists on the home: elsewhere it goes to /#contacto.
+ */
 export function CtaSection({
   content,
   testimonial,
+  onHome = false,
 }: {
   content: PageContentData<"home.cta">;
   testimonial: Testimonial | null;
+  onHome?: boolean;
 }) {
   const showTestimonial = content.showTestimonial && testimonial;
+  const href =
+    !onHome && content.cta.href.startsWith("#") ? `/${content.cta.href}` : content.cta.href;
   return (
     <Section tone="dark" aria-labelledby="cta-title">
       <div className="container-site grid gap-12 lg:grid-cols-12 lg:gap-8">
@@ -23,7 +32,7 @@ export function CtaSection({
             {content.title}
           </h2>
           <p className="max-w-xl text-lead text-paper/72">{content.text}</p>
-          <ButtonLink href={content.cta.href} arrow>
+          <ButtonLink href={href} arrow>
             {content.cta.label}
           </ButtonLink>
         </Reveal>
