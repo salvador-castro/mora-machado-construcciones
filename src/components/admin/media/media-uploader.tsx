@@ -1,12 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/admin/ui/button";
 import { Input } from "@/components/admin/ui/input";
 import type { MediaListItem } from "@/lib/media/admin-types";
-import { uploadMedia } from "@/server/actions/media";
 import { cn } from "@/lib/cn";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -17,6 +16,8 @@ const VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/x-m4v", "video/webm"
 
 const isVideo = (file: File) => file.type.startsWith("video/");
 
+type Progress = { label: string; percent: number | null };
+
 type QueueItem = {
   key: string;
   file: File;
@@ -24,7 +25,76 @@ type QueueItem = {
   alt: string;
   status: "idle" | "uploading" | "error";
   error?: string;
+  progress?: Progress;
+  startedAt?: number;
 };
+
+type UploadOutcome = { ok: true; item: MediaListItem } | { ok: false; error: string };
+
+/**
+ * Sends one file to /admin/media-upload (see that route) and reports progress:
+ * the upload through XHR, then the server's processing events (NDJSON lines).
+ */
+function uploadWithProgress(
+  form: FormData,
+  video: boolean,
+  onProgress: (p: Progress) => void,
+): Promise<UploadOutcome> {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    let read = 0;
+    let outcome: UploadOutcome | null = null;
+
+    const readEvents = () => {
+      const text = xhr.responseText;
+      const end = text.lastIndexOf("\n");
+      if (end < read) return;
+      for (const line of text.slice(read, end).split("\n")) {
+        if (!line.trim()) continue;
+        const event = JSON.parse(line) as
+          { stage: "processing" } | { stage: "converting"; percent: number } | UploadOutcome;
+        if ("stage" in event) {
+          onProgress(
+            event.stage === "converting"
+              ? { label: "Convirtiendo video", percent: event.percent }
+              : { label: video ? "Preparando el video" : "Procesando", percent: null },
+          );
+        } else outcome = event;
+      }
+      read = end + 1;
+    };
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        onProgress({ label: "Subiendo", percent: Math.round((e.loaded / e.total) * 100) });
+      }
+    };
+    xhr.upload.onload = () =>
+      onProgress({ label: video ? "Preparando el video" : "Procesando", percent: null });
+    xhr.onprogress = readEvents;
+    xhr.onload = () => {
+      try {
+        readEvents();
+        if (!outcome) {
+          const body = JSON.parse(xhr.responseText || "{}") as { error?: string };
+          outcome = { ok: false, error: body.error ?? `Error ${xhr.status}` };
+        }
+      } catch {
+        outcome = {
+          ok: false,
+          error: xhr.status === 413 ? "El archivo es demasiado grande." : `Error ${xhr.status}`,
+        };
+      }
+      resolve(outcome);
+    };
+    xhr.onerror = () => resolve({ ok: false, error: "Se cortó la conexión. Probá de nuevo." });
+    xhr.ontimeout = () =>
+      resolve({ ok: false, error: "La subida tardó demasiado. Probá de nuevo." });
+    xhr.timeout = 5 * 60_000;
+    xhr.open("POST", "/admin/media-upload");
+    xhr.send(form);
+  });
+}
 
 /** Suggests an alt from the filename; the user must review it before uploading. */
 function altFromName(name: string) {
@@ -50,6 +120,13 @@ export function MediaUploader({
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Ticks while uploading so the elapsed time keeps moving (shows it isn't frozen).
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!busy) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [busy]);
 
   function addFiles(files: FileList | File[]) {
     const next: QueueItem[] = [];
@@ -90,18 +167,26 @@ export function MediaUploader({
     setBusy(true);
     const uploaded: MediaListItem[] = [];
     for (const item of queue) {
-      setQueue((q) => q.map((i) => (i.key === item.key ? { ...i, status: "uploading" } : i)));
+      const update = (patch: Partial<QueueItem>) =>
+        setQueue((q) => q.map((i) => (i.key === item.key ? { ...i, ...patch } : i)));
+      update({
+        status: "uploading",
+        error: undefined,
+        startedAt: Date.now(),
+        progress: { label: "Subiendo", percent: 0 },
+      });
       const fd = new FormData();
       fd.set("file", item.file);
       fd.set("alt", item.alt);
-      const res = await uploadMedia(fd);
-      if (res.ok && res.data) {
-        uploaded.push(res.data);
+      const res = await uploadWithProgress(fd, isVideo(item.file), (progress) =>
+        update({ progress }),
+      );
+      if (res.ok) {
+        uploaded.push(res.item);
         URL.revokeObjectURL(item.preview);
         setQueue((q) => q.filter((i) => i.key !== item.key));
       } else {
-        const error = res.ok ? "Error" : res.error;
-        setQueue((q) => q.map((i) => (i.key === item.key ? { ...i, status: "error", error } : i)));
+        update({ status: "error", error: res.error, progress: undefined });
       }
     }
     setBusy(false);
@@ -208,13 +293,16 @@ export function MediaUploader({
                       )
                     }
                   />
+                  {item.status === "uploading" && item.progress && (
+                    <UploadProgress
+                      progress={item.progress}
+                      seconds={Math.max(0, Math.round((now - (item.startedAt ?? now)) / 1000))}
+                    />
+                  )}
                   {item.error && <p className="text-xs text-destructive">{item.error}</p>}
                 </div>
                 {item.status === "uploading" ? (
-                  <span className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                    {isVideo(item.file) ? "Procesando video…" : "Subiendo"}
-                  </span>
+                  <Loader2 className="mt-2 size-4 animate-spin text-muted-foreground" aria-hidden />
                 ) : (
                   <Button
                     type="button"
@@ -238,6 +326,38 @@ export function MediaUploader({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Stage, bar (percent, or indeterminate while the server works) and elapsed time. */
+function UploadProgress({ progress, seconds }: { progress: Progress; seconds: number }) {
+  const elapsed = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  return (
+    <div className="space-y-1" role="status" aria-live="polite">
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>
+          {progress.label}
+          {progress.percent != null ? ` ${progress.percent} %` : "…"}
+        </span>
+        <span className="tabular-nums">{elapsed}</span>
+      </div>
+      <div
+        role="progressbar"
+        aria-label={progress.label}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress.percent ?? undefined}
+        className="h-1.5 overflow-hidden rounded-full bg-muted"
+      >
+        <div
+          className={cn(
+            "h-full rounded-full bg-primary transition-[width] duration-300",
+            progress.percent == null && "w-1/3 animate-pulse",
+          )}
+          style={progress.percent != null ? { width: `${progress.percent}%` } : undefined}
+        />
+      </div>
     </div>
   );
 }

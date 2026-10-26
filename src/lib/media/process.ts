@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -149,13 +149,56 @@ async function ffmpeg(bin: "ffmpeg" | "ffprobe", args: string[]) {
 }
 
 /**
+ * Runs ffmpeg with `-progress pipe:1` and reports how much of `duration` it has
+ * encoded (0–100). Same error handling as ffmpeg() above.
+ */
+function ffmpegWithProgress(args: string[], duration: number, onPercent: (p: number) => void) {
+  const cmd = process.env.FFMPEG_PATH || "ffmpeg";
+  return new Promise<void>((resolve, reject) => {
+    const child = spawn(cmd, ["-progress", "pipe:1", "-nostats", ...args]);
+    const timer = setTimeout(() => child.kill("SIGKILL"), 180_000);
+    let stderr = "";
+    let buffered = "";
+    child.stdout.on("data", (chunk: Buffer) => {
+      buffered += chunk.toString();
+      const lines = buffered.split("\n");
+      buffered = lines.pop() ?? "";
+      for (const line of lines) {
+        // out_time_us is in microseconds (out_time_ms too, despite its name).
+        const m = /^out_time_us=(\d+)$/.exec(line.trim());
+        if (m) onPercent(Math.min(99, Math.round((Number(m[1]) / 1e6 / duration) * 100)));
+      }
+    });
+    child.stderr.on("data", (chunk: Buffer) => (stderr = (stderr + chunk.toString()).slice(-2000)));
+    child.on("error", (err: NodeJS.ErrnoException) => {
+      clearTimeout(timer);
+      reject(
+        err.code === "ENOENT"
+          ? new MediaError("El servidor no puede procesar videos: falta instalar ffmpeg.")
+          : err,
+      );
+    });
+    child.on("close", (code, signal) => {
+      clearTimeout(timer);
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg exited with ${signal ?? code}: ${stderr}`));
+    });
+  });
+}
+
+/**
  * Validates a video with ffprobe, converts it to an H.264/AAC MP4 that every
  * browser plays (phones record HEVC, which Chrome/Firefox often can't), at most
  * 1280 px on the long side, with the moov atom first so it starts streaming
  * right away. A frame becomes the poster through processImage, so the media
  * keeps image variants (thumbnails, srcset) and gains `videoPath`.
  */
-export async function processVideo(input: Buffer, originalName: string): Promise<ProcessedMedia> {
+export async function processVideo(
+  input: Buffer,
+  originalName: string,
+  /** Conversion progress, 0–100 (the slow part: seconds to a couple of minutes). */
+  onProgress?: (percent: number) => void,
+): Promise<ProcessedMedia> {
   if (input.byteLength > MAX_VIDEO_BYTES) {
     throw new MediaError(`El video supera los ${MAX_VIDEO_BYTES / 1024 / 1024} MB.`);
   }
@@ -189,12 +232,19 @@ export async function processVideo(input: Buffer, originalName: string): Promise
     }
 
     const side = VIDEO_MAX_SIDE;
-    await ffmpeg("ffmpeg", [
-      ...["-v", "error", "-y", "-i", src, "-map", "0:v:0", "-map", "0:a:0?"],
-      ...["-vf", `scale=${side}:${side}:force_original_aspect_ratio=decrease:force_divisible_by=2`],
-      ...["-c:v", "libx264", "-preset", "medium", "-crf", "26", "-pix_fmt", "yuv420p"],
-      ...["-c:a", "aac", "-b:a", "96k", "-ac", "2", "-movflags", "+faststart", out],
-    ]);
+    await ffmpegWithProgress(
+      [
+        ...["-v", "error", "-y", "-i", src, "-map", "0:v:0", "-map", "0:a:0?"],
+        ...[
+          "-vf",
+          `scale=${side}:${side}:force_original_aspect_ratio=decrease:force_divisible_by=2`,
+        ],
+        ...["-c:v", "libx264", "-preset", "medium", "-crf", "26", "-pix_fmt", "yuv420p"],
+        ...["-c:a", "aac", "-b:a", "96k", "-ac", "2", "-movflags", "+faststart", out],
+      ],
+      duration,
+      (p) => onProgress?.(p),
+    );
     await ffmpeg("ffmpeg", [
       ...["-v", "error", "-y", "-ss", String(Math.min(1, duration / 3)), "-i", out],
       ...["-frames:v", "1", "-q:v", "2", posterFile],
