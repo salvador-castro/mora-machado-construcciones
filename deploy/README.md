@@ -626,7 +626,8 @@ IP_HASH_SALT="<resultado de openssl rand -base64 16>"
 RESEND_API_KEY=""
 MAIL_FROM="Web Mora Machado <no-reply@moramachadoconstrucciones.com>"
 MAIL_TO_DEFAULT="info@moramachadoconstrucciones.com"
-LEAD_CONFIRMATION_EMAIL="false"
+LEAD_CONFIRMATION_EMAIL="true"
+LEAD_RETENTION_DAYS="730"
 
 # Anti-spam opcional de Cloudflare (dejar vacío)
 TURNSTILE_SITE_KEY=""
@@ -657,7 +658,8 @@ Qué hace cada variable:
 | `RESEND_API_KEY`          | Llave para enviar emails ([paso 13](#13-emails-del-sitio-resend)).                                                                                                                                     |
 | `MAIL_FROM`               | Remitente de los emails del sitio.                                                                                                                                                                     |
 | `MAIL_TO_DEFAULT`         | A quién avisar de las consultas si en el admin no hay emails cargados.                                                                                                                                 |
-| `LEAD_CONFIRMATION_EMAIL` | `true` = además manda un "recibimos tu consulta" a quien escribió.                                                                                                                                     |
+| `LEAD_CONFIRMATION_EMAIL` | `true` = además manda un "recibimos tu consulta" a quien escribió (el cliente lo pidió).                                                                                                               |
+| `LEAD_RETENTION_DAYS`     | Días que se guardan las consultas; la limpieza diaria borra las más viejas. `730` = 2 años, lo que dice la política de privacidad.                                                                     |
 | `BACKUP_*`                | Retención de backups locales y en Google Drive ([paso 14](#14-backups-a-google-drive)).                                                                                                                |
 
 > 🔒 Nunca copies este archivo a GitHub, a un chat ni a un email. Si una clave se filtra, generá otra y reemplazala.
@@ -1354,6 +1356,18 @@ Cuando pasaron **48 h** y todo lo de 16.8.3 dio bien: **Vercel** → **Domains**
 El sitio sigue funcionando durante el build; el corte es de 1-2 segundos al final, cuando PM2 reinicia.
 
 > **Cambios en la base (migraciones):** se aplican **antes** del build, mientras la versión anterior sigue atendiendo. Por eso tienen que ser "aditivas": agregar columnas o tablas, no borrarlas ni renombrarlas en el mismo deploy.
+
+### Cargar contenido con un script (una sola vez)
+
+Algunos cambios de contenido vienen en un script en lugar de cargarse a mano en el admin. Se corren **una sola vez**, después del deploy que los trae, porque pisan los campos que tocan:
+
+```bash
+cd /var/www/mora/current && pnpm content:client-answers
+```
+
+| Script                   | Qué carga                                                                                 | Estado              |
+| ------------------------ | ----------------------------------------------------------------------------------------- | ------------------- |
+| `content:client-answers` | Respuestas del cuestionario del cliente (26/10/2026): `prisma/content/client-answers.ts`. | Pendiente en el VPS |
 
 ### Volver a la versión anterior
 

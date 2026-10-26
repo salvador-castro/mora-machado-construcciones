@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `060067f chore: ignore client .docx files in docs/`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `0023183 docs: UptimeRobot monitor active on /healthz (step 15)`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -150,14 +150,13 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 
 ## 8. Estado actual y pendientes
 
-**Hecho (código):** sitio + admin completos (F1–F10), Resend, SEO/a11y (Lighthouse 100 en a11y/BP/SEO), seguridad (CSP, rate limits), 26 tests e2e verdes, CI de GitHub Actions, scripts de deploy probados en local (primer deploy con base vacía, backup y restore, Nginx con HTTPS local).
+**Hecho (código):** sitio + admin completos (F1–F10), Resend, SEO/a11y (Lighthouse 100 en a11y/BP/SEO), seguridad (CSP, rate limits), 26 tests e2e verdes, CI de GitHub Actions (verde desde el 21/10/2026), scripts de deploy probados en local (primer deploy con base vacía, backup y restore, Nginx con HTTPS local).
 
 **Hecho en el VPS (17/10/2026):** pasos 2 a 11 de la guía. El sitio de prueba funciona en **https://nuevo.moramachadoconstrucciones.com** (rama `develop`, `SITE_NOINDEX=true`), con certificado de Let's Encrypt (`certonly --webroot`), Nginx 1.24, PM2 `mora` y Postgres `mora_prod`. Lo que difería de la guía ya está corregido en el repo: `listen 443 ssl http2` en `mora.conf`, la copia de `options-ssl-nginx.conf`, `checkout develop` tras clonar, backups con `umask 077`, y el endurecimiento propio de la imagen de DonWeb (pasos 2–3).
 
 **No probado todavía:**
 
 - Rollback automático de `deploy.sh` cuando `/healthz` falla (el segundo deploy con `pm2 reload` sí se probó el 20/10/2026).
-- El workflow de CI.
 - Restaurar un backup en el VPS (14.5).
 
 **Pasos pendientes, en orden:**
@@ -168,15 +167,19 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 4. ~~Resend: dominio, DNS, API key (paso 13)~~ hecho y probado 20/10/2026.
 5. ~~Backups a Google Drive con rclone (paso 14)~~ hecho y probado 21/10/2026 (cron local OK desde el 18/10; copia en `gdrive:mora-backups`).
 6. ~~Monitoreo UptimeRobot sobre `/healthz` (paso 15)~~ ✅ activo, verificado el 26/10/2026 (`HEAD /healthz` cada 5 min → 200). Al lanzar, cambiar la URL del monitor al dominio principal.
-7. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).
+7. Contenido del cuestionario del cliente (26/10/2026): deployar `develop` (trae la migración `opening_hours`), sumar `LEAD_CONFIRMATION_EMAIL="true"` y `LEAD_RETENTION_DAYS="730"` a `shared/.env`, y correr **una vez** `cd /var/www/mora/current && pnpm content:client-answers` (guía, paso 17).
+8. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).
+
+**Cuestionario del cliente (respondido el 26/10/2026)** → `prisma/content/client-answers.ts`: ubicación Tali Puerto (Camino de la Costa Brava km 6,5, Zárate), horario L–V 8–17 y S 8–13, obras en todo el país, Instagram y TikTok `moramachadoconstrucciones`, barra «Agenda abierta para obras 2027» activa, formulario sin rangos de presupuesto, acuse por email a quien consulta, diferencial «Llave en mano», servicios nuevos «Plateas y pisos de hormigón» (el que más quieren vender) y «Pulido de pisos», obra «Pisos, veredas y calles de acceso» (Parque Industrial Zárate, 2026, 3.800 m², 30 días; oculta hasta tener fotos), historia desde 2001 en Nosotros, responsable de datos en la política de privacidad (Rodolfo Daniel Machado, CUIT 20-25661207-1, con el domicilio comercial; consultas guardadas 2 años) y blog oculto. Lo revisan Rodo y Sofi juntos para dar el OK.
 
 **Pendientes de contenido del cliente** (se ven en el inicio del admin):
 
-- Elegir color de acento: lima (template) o terracota (marca actual).
-- Fotos adicionales en alta resolución (las actuales son de 1200 px), logos de clientes y testimonios reales.
-- Revisar textos redactados: intro de inicio, Nosotros, detalle de servicios, blog y política de privacidad.
-- Confirmar rangos de presupuesto del formulario.
-- Mejorar los textos alternativos de las fotos de galería (hoy «Detalle de obra»).
+- OK de los textos nuevos (historia, «Llave en mano», los dos servicios nuevos, política de privacidad).
+- Fotos en alta resolución, foto de portada, foto del equipo y logo original.
+- Fotos de la obra nueva y permiso para mostrarla; logos de clientes y testimonios.
+- Textos alternativos de las fotos de galería (hoy «Detalle de obra»).
+- Perfil de Google Business.
+- Color de acento: lima (template) o terracota (marca actual).
 
 ---
 
@@ -810,7 +813,8 @@ IP_HASH_SALT="<resultado de openssl rand -base64 16>"
 RESEND_API_KEY=""
 MAIL_FROM="Web Mora Machado <no-reply@moramachadoconstrucciones.com>"
 MAIL_TO_DEFAULT="info@moramachadoconstrucciones.com"
-LEAD_CONFIRMATION_EMAIL="false"
+LEAD_CONFIRMATION_EMAIL="true"
+LEAD_RETENTION_DAYS="730"
 
 # Anti-spam opcional de Cloudflare (dejar vacío)
 TURNSTILE_SITE_KEY=""
@@ -841,7 +845,8 @@ Qué hace cada variable:
 | `RESEND_API_KEY`          | Llave para enviar emails ([paso 13](#13-emails-del-sitio-resend)).                                                                                                                                     |
 | `MAIL_FROM`               | Remitente de los emails del sitio.                                                                                                                                                                     |
 | `MAIL_TO_DEFAULT`         | A quién avisar de las consultas si en el admin no hay emails cargados.                                                                                                                                 |
-| `LEAD_CONFIRMATION_EMAIL` | `true` = además manda un "recibimos tu consulta" a quien escribió.                                                                                                                                     |
+| `LEAD_CONFIRMATION_EMAIL` | `true` = además manda un "recibimos tu consulta" a quien escribió (el cliente lo pidió).                                                                                                               |
+| `LEAD_RETENTION_DAYS`     | Días que se guardan las consultas; la limpieza diaria borra las más viejas. `730` = 2 años, lo que dice la política de privacidad.                                                                     |
 | `BACKUP_*`                | Retención de backups locales y en Google Drive ([paso 14](#14-backups-a-google-drive)).                                                                                                                |
 
 > 🔒 Nunca copies este archivo a GitHub, a un chat ni a un email. Si una clave se filtra, generá otra y reemplazala.
@@ -1539,6 +1544,18 @@ El sitio sigue funcionando durante el build; el corte es de 1-2 segundos al fina
 
 > **Cambios en la base (migraciones):** se aplican **antes** del build, mientras la versión anterior sigue atendiendo. Por eso tienen que ser "aditivas": agregar columnas o tablas, no borrarlas ni renombrarlas en el mismo deploy.
 
+### Cargar contenido con un script (una sola vez)
+
+Algunos cambios de contenido vienen en un script en lugar de cargarse a mano en el admin. Se corren **una sola vez**, después del deploy que los trae, porque pisan los campos que tocan:
+
+```bash
+cd /var/www/mora/current && pnpm content:client-answers
+```
+
+| Script                   | Qué carga                                                                                 | Estado              |
+| ------------------------ | ----------------------------------------------------------------------------------------- | ------------------- |
+| `content:client-answers` | Respuestas del cuestionario del cliente (26/10/2026): `prisma/content/client-answers.ts`. | Pendiente en el VPS |
+
 ### Volver a la versión anterior
 
 ```bash
@@ -1931,6 +1948,8 @@ MAIL_FROM="Web Mora Machado <no-reply@moramachadoconstrucciones.com>"
 MAIL_TO_DEFAULT="info@moramachadoconstrucciones.com"
 # "true" → also send an acknowledgement to the person who wrote (if they left an email).
 LEAD_CONFIRMATION_EMAIL="false"
+# Leads older than this are deleted by `pnpm db:cleanup` (privacy policy: 2 years).
+LEAD_RETENTION_DAYS="730"
 
 # ── Optional: Cloudflare Turnstile on the contact form ────
 TURNSTILE_SITE_KEY=""

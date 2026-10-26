@@ -30,6 +30,7 @@ pnpm brand:build         # regenera logo/favicon WebP desde assets/brand/logo-or
 pnpm brand:import        # los sube a Medios y los asigna en Configuración si están vacíos
 pnpm test:e2e            # Playwright (projects: public, public-mobile, admin)
 pnpm docs:pdf            # regenera docs/Donweb-VPS-rodo.md (partes 2–3) y los PDFs de docs/
+pnpm content:client-answers # aplica las respuestas del cuestionario del cliente a una base existente (una sola vez)
 ```
 
 ## Entorno local
@@ -58,7 +59,9 @@ pnpm docs:pdf            # regenera docs/Donweb-VPS-rodo.md (partes 2–3) y los
 - Entidades listables tienen `order` (drag & drop) y `published`.
 - Imágenes: `src/lib/media/process.ts` (sharp, valida formato real, variantes WebP en `UPLOAD_DIR/yyyy/mm/<uuid>-<w>.webp`, sin upscaling). Media referenciada desde JSON de `PageContent` (`*Id`) no tiene FK: el chequeo de uso debe escanear esos JSON.
 - Scripts CLI importan `@/lib/db-client` (no `@/lib/db`, que es `server-only`).
-- Texto marcado `// DRAFT` en `prisma/seed.ts` fue redactado por nosotros; pendiente de revisión del cliente (ver `SiteSettings.pendingTodos`).
+- Texto marcado `// DRAFT` en `prisma/seed.ts` y `prisma/content/client-answers.ts` fue redactado por nosotros; pendiente de revisión del cliente (ver `SiteSettings.pendingTodos`).
+- Contenido que llega del cliente en bloque: módulo en `prisma/content/` con una función idempotente que llama el seed (base vacía) y un script `pnpm content:*` para la base del VPS, que se corre **una vez** (pisa los campos que toca). Ej.: `client-answers.ts` (cuestionario del 26/10/2026).
+- Blog: el link del menú/footer sale de `navLinks({ blog })` y solo aparece si hay notas publicadas; `/blog` vacío lleva `noindex`. Hoy el cliente lo quiere oculto (sin notas).
 - HTML de editor rico siempre sanitizado antes de renderizar.
 - Commit por fase en `develop`. `main` conserva el sitio estático viejo (HTML + 11 imágenes en `public/img/`) hasta el lanzamiento.
 
@@ -102,8 +105,8 @@ F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F
 
 ## Contacto y consultas
 
-- Formulario público (`ContactForm`) → server action `submitLead` (`src/server/actions/contact.ts`): honeypot `website` (responde ok sin guardar), rate limit por IP hasheada (5 / 15 min en prod), Turnstile opcional (solo si están `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY`), >3 links → status `SPAM`. Tras guardar ofrece seguir por WhatsApp (no se abre solo: el popup se bloquea después de un await).
-- Email por **Resend** (no SMTP/nodemailer): módulo único `src/lib/email.ts` (`sendLeadNotification`, `sendTestEmail`), plantillas React Email en `src/emails/` (HTML + texto plano). Destinatarios: `SiteSettings.notificationEmails`, fallback `MAIL_TO_DEFAULT`; `replyTo` = email del cliente; asunto «Nueva consulta web – {nombre} – {teléfono}». Se envía con `after()`; el resultado queda en `Lead.emailStatus` (SENT/FAILED) + `emailInfo` (id de Resend o error) y el detalle de la consulta ofrece «Reintentar envío». Sin `RESEND_API_KEY` en dev el email se imprime en consola; en prod sin key → FAILED. Acuse al cliente opcional con `LEAD_CONFIRMATION_EMAIL=true`. Alta del dominio/DNS en `deploy/README.md`.
+- Formulario público (`ContactForm`): si `SiteSettings.budgetRanges` está vacío no pregunta presupuesto (así lo pidió el cliente). → server action `submitLead` (`src/server/actions/contact.ts`): honeypot `website` (responde ok sin guardar), rate limit por IP hasheada (5 / 15 min en prod), Turnstile opcional (solo si están `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY`), >3 links → status `SPAM`. Tras guardar ofrece seguir por WhatsApp (no se abre solo: el popup se bloquea después de un await).
+- Email por **Resend** (no SMTP/nodemailer): módulo único `src/lib/email.ts` (`sendLeadNotification`, `sendTestEmail`), plantillas React Email en `src/emails/` (HTML + texto plano). Destinatarios: `SiteSettings.notificationEmails`, fallback `MAIL_TO_DEFAULT`; `replyTo` = email del cliente; asunto «Nueva consulta web – {nombre} – {teléfono}». Se envía con `after()`; el resultado queda en `Lead.emailStatus` (SENT/FAILED) + `emailInfo` (id de Resend o error) y el detalle de la consulta ofrece «Reintentar envío». Sin `RESEND_API_KEY` en dev el email se imprime en consola; en prod sin key → FAILED. Acuse al cliente con `LEAD_CONFIRMATION_EMAIL=true` (el cliente lo quiere). `pnpm db:cleanup` borra las consultas de más de `LEAD_RETENTION_DAYS` (730 = 2 años, lo que promete la política de privacidad). Alta del dominio/DNS en `deploy/README.md`.
 - `src/lib/email.ts` usa `createElement` (no JSX) para mantener la extensión `.ts`. React Email (`react-dom/server`) funciona en server actions/`after()` de Next, pero **no** en scripts con `--conditions=react-server`.
 - Admin: `/admin/consultas` (filtro por estado en `?estado=`, búsqueda `?q=`, paginado), detalle con estado/notas/borrar, export CSV en `/admin/consultas-export` (mismos filtros, BOM UTF-8, anti CSV-injection).
 - e2e: Next 16 deja la página anterior oculta en el DOM (Activity) → en Playwright preferir `getByRole` (ignora lo oculto) sobre `getByLabel`/`getByText`.
@@ -118,14 +121,15 @@ F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F
 - Textos de negocio editables agregados en F9: `home.contact.consentText` (casilla de consentimiento) y `SiteSettings.whatsappMessage` (botón flotante).
 - Tests: `public.a11y` / `admin.a11y` (axe WCAG A/AA) y `public.seo`. Lighthouse (móvil, build de prod): a11y/best-practices/SEO 100; perf 92–99.
 
-## Estado actual y próximos pasos (17/10/2026)
+## Estado actual y próximos pasos (26/10/2026)
 
 - Código terminado (F1–F10) y **`develop` en GitHub**. Sitio viejo sigue en Vercel; `main` = sitio viejo hasta el lanzamiento.
 - Documentación para el deploy en `docs/`: `guia-deploy-vps.pdf` (= `deploy/README.md`), `Donweb-VPS-rodo.md` / `.pdf` (contexto completo + copias de `deploy/`, para el proyecto "Donweb-VPS-rodo" de Claude online). Regenerar PDFs: `pnpm docs:pdf`. `docs/Donweb-VPS-rodo.md`: la parte 1 (contexto) se edita a mano; las partes 2–3 (guía + archivos de `deploy/`) las regenera `pnpm docs:pdf`.
 - VPS configurado (pasos 2–11, 17/10/2026): el sitio de prueba funciona en `https://nuevo.moramachadoconstrucciones.com` (rama `develop`). En el VPS la infraestructura se llama **mora** (`/var/www/mora`, PM2 `mora`, `mora_prod`, `mora.conf`, `github_mora`, `gdrive:mora-backups`); el único nombre «rodo» es el alias SSH `vps-rodo`.
 - Correo de las casillas verificado 20/10/2026: entra a info@ y lo que sale pasa SPF/DKIM/DMARC en Gmail. Resend verificado 20/10/2026 (key en `shared/.env`, email de prueba OK). Backups a Google Drive activos desde 21/10/2026 (`gdrive:mora-backups`, backup de prueba subido). Monitoreo UptimeRobot activo (verificado 26/10/2026: `HEAD /healthz` cada 5 min → 200; al lanzar, cambiar la URL al dominio principal). Próximo: lanzamiento con OK del cliente (paso 16).
-- Probado en el VPS: segundo deploy con `pm2 reload` (20/10/2026). Cron de backup local OK desde 18/10. No probado aún: rollback de `deploy.sh`, workflow de CI, restore de un backup en el VPS.
-- Pendientes de contenido del cliente: fotos en alta, revisar textos `// DRAFT`, rangos de presupuesto, alts de galería, color de acento (por ahora queda el actual).
+- Probado en el VPS: segundo deploy con `pm2 reload` (20/10/2026). Cron de backup local OK desde 18/10. CI de GitHub Actions verde (21/10). No probado aún: rollback de `deploy.sh`, restore de un backup en el VPS.
+- Cuestionario del cliente respondido (26/10/2026) → `prisma/content/client-answers.ts`: ubicación Tali Puerto (Camino de la Costa Brava km 6,5), horario (campo nuevo `SiteSettings.openingHours`), cobertura todo el país, Instagram/TikTok, barra de aviso activa, sin rangos de presupuesto, diferencial «Llave en mano», servicios nuevos «Plateas y pisos de hormigón» (el que más quieren vender, primero) y «Pulido de pisos», obra industrial nueva (oculta hasta tener fotos), historia en Nosotros, responsable en la política de privacidad (Rodolfo Daniel Machado, CUIT 20-25661207-1; se publica el domicilio comercial, **no** el particular), blog oculto. Datos para una futura sección de preguntas frecuentes: garantía de 1 año por fallas de la empresa; cotización con visita (o planos/fotos/videos si es lejos), sin costo según distancia; pago 50/50 en obras chicas, ~20 % de anticipo y certificados de avance en grandes. Referencia de diseño que les gusta: Grupo Irizar.
+- Pendientes de contenido del cliente: fotos en alta, logo original, logos de clientes y testimonios, fotos de la obra nueva, alts de galería, Google Business, color de acento, y OK de los textos nuevos (ver `pendingTodos`).
 
 ## Entorno: iCloud
 
