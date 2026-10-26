@@ -99,7 +99,7 @@ F1 setup ✅ · F2 design system ✅ · F3 schema + seed ✅ · F4 home ✅ · F
 ## Admin: editores de entidades
 
 - Servicios, obras y notas tienen editor de página completa (`src/components/admin/entities/*-form.tsx`) con piezas compartidas en `src/components/admin/form/entity-fields.tsx` (título+slug, SEO, rich text, ítems título/descripción, vista previa, borrar). Al crear, `router.replace` al `[id]`; la página remonta el form con `key={updatedAt}`.
-- Listados ordenables de servicios/obras: `SortableEntityList`. Blog: tabs notas/categorías (`/admin/blog?tab=categorias`).
+- Listados ordenables de servicios/obras: `SortableEntityList`. Obras (`/admin/obras`): búsqueda `?q=`, filtro `?estado=publicadas|ocultas|destacadas`, paginado `?pagina=` (20 por página). El arrastre solo está sin búsqueda ni filtro; en una página, `reorder(entity, ids, offset)` reemplaza ese tramo y renumera toda la lista (orden `[order, id]`). No se puede arrastrar de una página a otra. Blog: tabs notas/categorías (`/admin/blog?tab=categorias`).
 - Usuarios (`/admin/usuarios`, solo ADMIN): no se puede quitar el rol/desactivar/borrar a uno mismo ni al último admin activo; cambiar rol, desactivar o resetear contraseña cierra sus sesiones. Política de contraseñas client-safe en `src/lib/auth/password-policy.ts` (`password.ts` usa argon2, solo server).
 - Testing interactivo del admin: Playwright (`pnpm test:e2e --project=admin`); la pestaña de Chrome automatizada queda `hidden` y React no revela el contenido streameado.
 

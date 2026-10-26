@@ -34,3 +34,26 @@ test("create a project with a gallery photo, publish it, then delete it", async 
   await expect(page).toHaveURL(/\/admin\/obras$/);
   expect((await page.request.get(`/obras/${slug}`)).status()).toBe(404);
 });
+
+test("the projects list can be searched and filtered", async ({ page }) => {
+  await page.goto("/admin/obras");
+  const list = page.getByRole("main");
+  await expect(
+    list.getByRole("button", { name: "Arrastrar para reordenar" }).first(),
+  ).toBeVisible();
+
+  await page.getByRole("textbox", { name: "Buscar obras" }).fill("pádel");
+  await page.getByRole("textbox", { name: "Buscar obras" }).press("Enter");
+  await expect(page).toHaveURL(/q=p%C3%A1del/);
+  await expect(list.getByRole("link", { name: /Cancha de pádel/ })).toBeVisible();
+  await expect(list.getByRole("link", { name: /Encofrado/ })).toHaveCount(0);
+  // A filtered list can't be reordered: its order isn't the real one.
+  await expect(list.getByRole("button", { name: "Arrastrar para reordenar" })).toHaveCount(0);
+
+  await page.goto("/admin/obras?estado=ocultas");
+  for (const row of await list.getByRole("switch").all()) {
+    await expect(row).not.toBeChecked();
+  }
+  await page.goto("/admin/obras?q=no-existe-esta-obra");
+  await expect(page.getByText("No hay obras con ese filtro.")).toBeVisible();
+});
