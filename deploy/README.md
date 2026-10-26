@@ -491,8 +491,10 @@ sudo fail2ban-client status sshd           # "Status for the jail: sshd" y la li
 
 ```bash
 sudo apt install -y git curl build-essential nginx certbot python3-certbot-nginx rclone \
-  postgresql postgresql-contrib
+  postgresql postgresql-contrib ffmpeg
 ```
+
+> `ffmpeg` convierte los videos que se suben a las obras (los de celular vienen en un formato que muchos navegadores no reproducen). Sin él, subir un video da el error «falta instalar ffmpeg».
 
 ### 4.2 Node.js 22
 
@@ -860,9 +862,10 @@ sudo systemctl reload nginx
 
 - **`X-Real-IP $remote_addr`**: la app la usa para limitar los intentos de login y los envíos del formulario. Sin esto, todos los visitantes cuentan como la misma persona.
 - **No agregar `X-Forwarded-Proto`**: con esa cabecera, Next.js 16 responde **error 500** en las páginas que no existen (en vez de 404).
-- **`client_max_body_size 12m`**: las fotos se suben de a una, hasta 10 MB.
+- **`client_max_body_size 32m`**: los archivos se suben de a uno: fotos hasta 10 MB y videos hasta 30 MB.
+- **`proxy_read_timeout 180s`**: al subir un video, el servidor lo convierte durante el mismo pedido (hasta 1–2 minutos).
 - **Nada de `proxy_cache`**: la caché la maneja la app, y el admin la actualiza al guardar.
-- **`/uploads/`** se sirve directo desde el disco (más rápido). Solo existen archivos `.webp`; cualquier otra cosa da 404.
+- **`/uploads/`** se sirve directo desde el disco (más rápido). Solo existen fotos `.webp` y videos `.mp4`; cualquier otra cosa da 404.
 
 ---
 
@@ -1357,6 +1360,23 @@ El sitio sigue funcionando durante el build; el corte es de 1-2 segundos al fina
 
 > **Cambios en la base (migraciones):** se aplican **antes** del build, mientras la versión anterior sigue atendiendo. Por eso tienen que ser "aditivas": agregar columnas o tablas, no borrarlas ni renombrarlas en el mismo deploy.
 
+### Actualizar la configuración de Nginx
+
+Los archivos de `deploy/nginx/` se copian a `/etc/nginx/` a mano (pasos 10 y 16.5): un deploy **no** los actualiza. Cuando cambian en el repo, hay que volver a copiarlos. Antes del lanzamiento (sitio de prueba):
+
+```bash
+cd /var/www/mora/current/deploy/nginx
+sed 's/moramachadoconstrucciones\.com/nuevo.moramachadoconstrucciones.com/g' mora.conf \
+  | sudo tee /etc/nginx/sites-available/mora-staging > /dev/null
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Después del lanzamiento: `sudo cp /var/www/mora/current/deploy/nginx/mora.conf /etc/nginx/sites-available/mora` y el mismo `nginx -t` + `reload`.
+
+| Cambio                        | Fecha      | Para qué                                                        |
+| ----------------------------- | ---------- | --------------------------------------------------------------- |
+| Videos (`.mp4`, 32 MB, 180 s) | 26/10/2026 | Subir videos a las obras: además, `sudo apt install -y ffmpeg`. |
+
 ### Cargar contenido con un script (una sola vez)
 
 Algunos cambios de contenido vienen en un script en lugar de cargarse a mano en el admin. Se corren **una sola vez**, después del deploy que los trae, porque pisan los campos que tocan:
@@ -1439,7 +1459,7 @@ pm2 reload mora
 ## Anexo: cómo funciona por dentro
 
 ```
-Visitante ──https──▶ Nginx (443) ──┬─▶ /uploads/*.webp → disco (/var/www/mora/uploads)
+Visitante ──https──▶ Nginx (443) ──┬─▶ /uploads/*.webp|mp4 → disco (/var/www/mora/uploads)
                                    └─▶ todo lo demás → Next.js (127.0.0.1:3000, PM2) ──▶ PostgreSQL (localhost:5432)
                                                                                       └─▶ Resend (emails)
 ```

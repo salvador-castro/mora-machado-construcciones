@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `61d4346 fix(deps): next 16.4.3 and sanitize-html 2.18.1 (security advisories)`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `bb05137 fix(admin): new-leads badge updates after deleting a lead`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -168,7 +168,8 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 5. ~~Backups a Google Drive con rclone (paso 14)~~ hecho y probado 21/10/2026 (cron local OK desde el 18/10; copia en `gdrive:mora-backups`).
 6. ~~Monitoreo UptimeRobot sobre `/healthz` (paso 15)~~ ✅ activo, verificado el 26/10/2026 (`HEAD /healthz` cada 5 min → 200). Al lanzar, cambiar la URL del monitor al dominio principal.
 7. ~~Contenido del cuestionario del cliente~~ ✅ aplicado en el VPS el 26/10/2026 (`pnpm content:client-answers` + `pm2 reload mora`, que es obligatorio después de un script de contenido porque la caché vive en memoria).
-8. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).
+8. Videos en las obras (26/10/2026): en el VPS, `sudo apt install -y ffmpeg`, deployar y volver a copiar la config de Nginx del sitio de prueba (guía, paso 17 «Actualizar la configuración de Nginx»): ahora sirve `.mp4`, acepta archivos de hasta 32 MB y espera 180 s.
+9. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).
 
 **Cuestionario del cliente (respondido el 26/10/2026)** → `prisma/content/client-answers.ts`: ubicación Tali Puerto (Camino de la Costa Brava km 6,5, Zárate), horario L–V 8–17 y S 8–13, obras en todo el país, Instagram y TikTok `moramachadoconstrucciones`, barra «Agenda abierta para obras 2027» activa, formulario sin rangos de presupuesto, acuse por email a quien consulta, diferencial «Llave en mano», servicios nuevos «Plateas y pisos de hormigón» (el que más quieren vender) y «Pulido de pisos», obra «Pisos, veredas y calles de acceso» (Parque Industrial Zárate, 2026, 3.800 m², 30 días; oculta hasta tener fotos), historia desde 2001 en Nosotros, responsable de datos en la política de privacidad (Rodolfo Daniel Machado, CUIT 20-25661207-1, con el domicilio comercial; consultas guardadas 2 años) y blog oculto. Lo revisan Rodo y Sofi juntos para dar el OK.
 
@@ -678,8 +679,10 @@ sudo fail2ban-client status sshd           # "Status for the jail: sshd" y la li
 
 ```bash
 sudo apt install -y git curl build-essential nginx certbot python3-certbot-nginx rclone \
-  postgresql postgresql-contrib
+  postgresql postgresql-contrib ffmpeg
 ```
+
+> `ffmpeg` convierte los videos que se suben a las obras (los de celular vienen en un formato que muchos navegadores no reproducen). Sin él, subir un video da el error «falta instalar ffmpeg».
 
 ### 4.2 Node.js 22
 
@@ -1047,9 +1050,10 @@ sudo systemctl reload nginx
 
 - **`X-Real-IP $remote_addr`**: la app la usa para limitar los intentos de login y los envíos del formulario. Sin esto, todos los visitantes cuentan como la misma persona.
 - **No agregar `X-Forwarded-Proto`**: con esa cabecera, Next.js 16 responde **error 500** en las páginas que no existen (en vez de 404).
-- **`client_max_body_size 12m`**: las fotos se suben de a una, hasta 10 MB.
+- **`client_max_body_size 32m`**: los archivos se suben de a uno: fotos hasta 10 MB y videos hasta 30 MB.
+- **`proxy_read_timeout 180s`**: al subir un video, el servidor lo convierte durante el mismo pedido (hasta 1–2 minutos).
 - **Nada de `proxy_cache`**: la caché la maneja la app, y el admin la actualiza al guardar.
-- **`/uploads/`** se sirve directo desde el disco (más rápido). Solo existen archivos `.webp`; cualquier otra cosa da 404.
+- **`/uploads/`** se sirve directo desde el disco (más rápido). Solo existen fotos `.webp` y videos `.mp4`; cualquier otra cosa da 404.
 
 ---
 
@@ -1544,6 +1548,23 @@ El sitio sigue funcionando durante el build; el corte es de 1-2 segundos al fina
 
 > **Cambios en la base (migraciones):** se aplican **antes** del build, mientras la versión anterior sigue atendiendo. Por eso tienen que ser "aditivas": agregar columnas o tablas, no borrarlas ni renombrarlas en el mismo deploy.
 
+### Actualizar la configuración de Nginx
+
+Los archivos de `deploy/nginx/` se copian a `/etc/nginx/` a mano (pasos 10 y 16.5): un deploy **no** los actualiza. Cuando cambian en el repo, hay que volver a copiarlos. Antes del lanzamiento (sitio de prueba):
+
+```bash
+cd /var/www/mora/current/deploy/nginx
+sed 's/moramachadoconstrucciones\.com/nuevo.moramachadoconstrucciones.com/g' mora.conf \
+  | sudo tee /etc/nginx/sites-available/mora-staging > /dev/null
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Después del lanzamiento: `sudo cp /var/www/mora/current/deploy/nginx/mora.conf /etc/nginx/sites-available/mora` y el mismo `nginx -t` + `reload`.
+
+| Cambio                        | Fecha      | Para qué                                                        |
+| ----------------------------- | ---------- | --------------------------------------------------------------- |
+| Videos (`.mp4`, 32 MB, 180 s) | 26/10/2026 | Subir videos a las obras: además, `sudo apt install -y ffmpeg`. |
+
 ### Cargar contenido con un script (una sola vez)
 
 Algunos cambios de contenido vienen en un script en lugar de cargarse a mano en el admin. Se corren **una sola vez**, después del deploy que los trae, porque pisan los campos que tocan:
@@ -1626,7 +1647,7 @@ pm2 reload mora
 ## Anexo: cómo funciona por dentro
 
 ```
-Visitante ──https──▶ Nginx (443) ──┬─▶ /uploads/*.webp → disco (/var/www/mora/uploads)
+Visitante ──https──▶ Nginx (443) ──┬─▶ /uploads/*.webp|mp4 → disco (/var/www/mora/uploads)
                                    └─▶ todo lo demás → Next.js (127.0.0.1:3000, PM2) ──▶ PostgreSQL (localhost:5432)
                                                                                       └─▶ Resend (emails)
 ```
@@ -1826,8 +1847,9 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/moramachadoconstrucciones.com/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
 
-    # Media uploads go one file per request (max 10 MB, see lib/media/process.ts).
-    client_max_body_size 12m;
+    # Media uploads go one file per request (images 10 MB, videos 30 MB: see
+    # lib/media/process.ts).
+    client_max_body_size 32m;
     server_tokens off;
 
     gzip on;
@@ -1838,10 +1860,11 @@ server {
     access_log /var/log/nginx/mora.access.log;
     error_log  /var/log/nginx/mora.error.log warn;
 
-    # Uploaded media straight from disk (UPLOAD_DIR). Only .webp variants exist;
-    # anything else under /uploads/ is a 404. These responses skip Next, so the
-    # security headers that matter for files are set here.
-    location ~ ^/uploads/(.+\.webp)$ {
+    # Uploaded media straight from disk (UPLOAD_DIR): .webp image variants and
+    # .mp4 videos (Nginx handles the byte ranges video players ask for). Anything
+    # else under /uploads/ is a 404. These responses skip Next, so the security
+    # headers that matter for files are set here.
+    location ~ ^/uploads/(.+\.(?:webp|mp4))$ {
         alias /var/www/mora/uploads/$1;
         access_log off;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
@@ -1864,8 +1887,9 @@ server {
         # proxy.ts 404 rewrite as an external https fetch to itself and fails
         # (500). Absolute URLs come from SITE_URL, so the app doesn't need it.
         proxy_set_header X-Forwarded-Host $host;
-        proxy_read_timeout 60s;
-        proxy_send_timeout 60s;
+        # Video uploads are converted during the request (ffmpeg, up to ~2 min).
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
     }
 }
 ```
@@ -1953,6 +1977,12 @@ MAIL_TO_DEFAULT="info@moramachadoconstrucciones.com"
 LEAD_CONFIRMATION_EMAIL="false"
 # Leads older than this are deleted by `pnpm db:cleanup` (privacy policy: 2 years).
 LEAD_RETENTION_DAYS="730"
+
+# ── Video uploads ─────────────────────────────────────────
+# ffmpeg/ffprobe convert uploaded videos to H.264 MP4 (apt install ffmpeg).
+# Only needed if they are not on the PATH.
+FFMPEG_PATH=""
+FFPROBE_PATH=""
 
 # ── Optional: Cloudflare Turnstile on the contact form ────
 TURNSTILE_SITE_KEY=""
