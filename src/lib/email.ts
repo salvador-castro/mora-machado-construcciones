@@ -107,7 +107,10 @@ export async function sendLeadNotification(
             lead,
             brandName: brand,
             adminUrl: siteUrl(`/admin/consultas/${lead.id}`),
-            whatsappUrl: whatsappUrl(lead.phone),
+            whatsappUrl: whatsappUrl(
+              lead.phone,
+              `Hola ${lead.name.split(" ")[0]}, te escribo de ${brand} por la consulta que dejaste en la web.`,
+            ),
           }),
         })
       : { status: "FAILED", error: "No hay destinatarios configurados." };

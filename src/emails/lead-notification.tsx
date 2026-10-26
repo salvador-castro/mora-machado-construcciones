@@ -69,9 +69,15 @@ export function LeadNotificationEmail({
           Responder por WhatsApp
         </Button>
       </Section>
-      <Text style={{ ...emailText, fontSize: 13, marginTop: 24 }}>
-        <Link href={adminUrl}>Ver la consulta en el panel</Link>
-        {lead.email ? " · Respondiendo este email le escribís directamente." : ""}
+      <Text style={{ ...emailText, marginTop: 16 }}>
+        {lead.email
+          ? `Para responder por email, contestá este mensaje: le llega directo a ${lead.name}.`
+          : "No dejó email: respondé por WhatsApp o llamando al teléfono."}
+      </Text>
+      <Text style={{ ...emailText, fontSize: 12, color: "#5e5a53", marginTop: 24 }}>
+        <Link href={adminUrl} style={{ color: "#5e5a53" }}>
+          Ver la consulta en el panel
+        </Link>
       </Text>
     </EmailLayout>
   );
