@@ -228,28 +228,47 @@ export function ToggleField({ name, label, help }: { name: string; label: string
   );
 }
 
-export function SeoSection() {
+/**
+ * Optional SEO overrides. The placeholders show what is used when they stay empty
+ * (the entity's title and `summaryField`), so nobody fills them in by accident.
+ */
+export function SeoSection({ summaryField = "excerpt" }: { summaryField?: string }) {
   const { register, formState } = useFormContext();
   const title = (useWatch({ name: "seoTitle" }) as string | null) ?? "";
   const desc = (useWatch({ name: "seoDescription" }) as string | null) ?? "";
+  const fallbackTitle = (useWatch({ name: "title" }) as string | null) ?? "";
+  const fallbackDesc = (useWatch({ name: summaryField }) as string | null) ?? "";
   return (
     <FormSection
       title="SEO"
-      description="Opcional. Si se deja vacío se usan el título y el resumen."
+      description="Opcional: dejalo vacío salvo que quieras otro texto en Google y en la pestaña del navegador. Vacío, se usan el título y el resumen (los ves en gris)."
     >
       <Field
         id="f-seoTitle"
         label={`Título para Google (${title.length}/90)`}
         error={errorAt(formState.errors, "seoTitle")}
       >
-        <Input id="f-seoTitle" maxLength={90} {...register("seoTitle")} />
+        <Input
+          id="f-seoTitle"
+          maxLength={90}
+          autoComplete="off"
+          placeholder={fallbackTitle}
+          {...register("seoTitle")}
+        />
       </Field>
       <Field
         id="f-seoDescription"
         label={`Descripción para Google (${desc.length}/170)`}
         error={errorAt(formState.errors, "seoDescription")}
       >
-        <Textarea id="f-seoDescription" rows={3} maxLength={170} {...register("seoDescription")} />
+        <Textarea
+          id="f-seoDescription"
+          rows={3}
+          maxLength={170}
+          autoComplete="off"
+          placeholder={fallbackDesc}
+          {...register("seoDescription")}
+        />
       </Field>
     </FormSection>
   );
