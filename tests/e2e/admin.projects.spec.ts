@@ -57,3 +57,26 @@ test("the projects list can be searched and filtered", async ({ page }) => {
   await page.goto("/admin/obras?q=no-existe-esta-obra");
   await expect(page.getByText("No hay obras con ese filtro.")).toBeVisible();
 });
+
+test("a project can be moved to any position (long lists)", async ({ page }) => {
+  await page.goto("/admin/obras");
+  const list = page.getByRole("main").getByRole("listitem");
+  const last = list.last();
+  const title = (await last.locator("a span.font-medium").innerText()).trim();
+  const lastPos = Number((await last.getByText(/^#\d+$/).innerText()).slice(1));
+
+  await last.getByRole("button", { name: `Mover «${title}»` }).click();
+  await page.getByRole("button", { name: "Al principio" }).click();
+  await expect(page.getByText("Ahora está en la posición 1.")).toBeVisible();
+  await expect(list.first().locator("a span.font-medium")).toHaveText(title);
+
+  // Put it back where it was, typing the position.
+  await list
+    .first()
+    .getByRole("button", { name: `Mover «${title}»` })
+    .click();
+  await page.getByRole("spinbutton", { name: "Nueva posición" }).fill(String(lastPos));
+  await page.getByRole("button", { name: "Mover", exact: true }).click();
+  await expect(page.getByText(`Ahora está en la posición ${lastPos}.`)).toBeVisible();
+  await expect(list.last().locator("a span.font-medium")).toHaveText(title);
+});

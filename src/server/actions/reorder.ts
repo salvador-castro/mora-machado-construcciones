@@ -67,3 +67,43 @@ export async function reorder(
   invalidate(...ENTITY_TAGS[parsed.data.entity]);
   return ok(undefined, "Orden guardado.");
 }
+
+const moveSchema = z.object({
+  entity: z.enum(SORTABLE),
+  id: z.string().min(1),
+  position: z.number().int().min(1),
+});
+
+/**
+ * Moves one item to `position` (1-based, clamped to the list) and renumbers the
+ * whole list: for long or paginated lists, where dragging from #50 to #1 isn't practical.
+ */
+export async function moveTo(
+  entity: SortableEntity,
+  id: string,
+  position: number,
+): Promise<ActionResult> {
+  const user = await requireUser();
+  const parsed = moveSchema.safeParse({ entity, id, position });
+  if (!parsed.success) return fail("Posición inválida.");
+
+  const delegate = db[parsed.data.entity] as unknown as {
+    findMany: (args: { orderBy: object[]; select: { id: true } }) => Promise<{ id: string }[]>;
+    update: (args: { where: { id: string }; data: { order: number } }) => Promise<unknown>;
+  };
+  const ids = (
+    await delegate.findMany({ orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true } })
+  ).map((r) => r.id);
+  const from = ids.indexOf(parsed.data.id);
+  if (from === -1) return fail("Ya no existe. Recargá la página.");
+  ids.splice(from, 1);
+  const to = Math.min(parsed.data.position, ids.length + 1) - 1;
+  ids.splice(to, 0, parsed.data.id);
+
+  await db.$transaction(
+    ids.map((rowId, order) => delegate.update({ where: { id: rowId }, data: { order } }) as never),
+  );
+  await audit(user.id, "reorder", parsed.data.entity, parsed.data.id);
+  invalidate(...ENTITY_TAGS[parsed.data.entity]);
+  return ok(undefined, `Ahora está en la posición ${to + 1}.`);
+}

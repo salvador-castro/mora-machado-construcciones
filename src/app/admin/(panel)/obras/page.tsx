@@ -81,6 +81,10 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/o
       category: { select: { name: true } },
     },
   });
+  // Positions in the whole list, shown on each row (also when filtered).
+  const allIds = (
+    await db.project.findMany({ orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true } })
+  ).map((p) => p.id);
   const previews = await mediaPreviews(projects.map((p) => p.coverId));
   const rows = projects.map((p) => ({
     id: p.id,
@@ -89,6 +93,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/o
     thumbUrl: p.coverId ? previews[p.coverId]?.thumbUrl : null,
     published: p.published,
     featured: p.featured,
+    position: allIds.indexOf(p.id) + 1,
   }));
   // Drag & drop only on the plain list: a filtered list's order isn't the real one.
   const sortable = filter === "todas" && !q;
@@ -99,8 +104,8 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/o
         title="Obras"
         description={
           sortable
-            ? "Arrastrá para ordenar. La estrella marca las obras destacadas del inicio."
-            : "Para ordenar arrastrando, quitá la búsqueda y el filtro."
+            ? "Arrastrá o usá ⇅ para mover una obra a cualquier posición. ★ = destacada en el inicio."
+            : "Usá ⇅ para mover una obra a cualquier posición. Para arrastrar, quitá la búsqueda y el filtro."
         }
         actions={
           <Button asChild>
@@ -154,6 +159,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/o
         empty={q || filter !== "todas" ? "No hay obras con ese filtro." : "Todavía no hay obras."}
         sortable={sortable}
         offset={(page - 1) * PAGE_SIZE}
+        total={allIds.length}
       />
 
       {pages > 1 && (
