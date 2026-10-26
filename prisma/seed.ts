@@ -241,7 +241,7 @@ async function main() {
 
   const addedPages = await ensurePages(img);
   if (existing && !force) {
-    await importBrandAssets(db); // assigns logo/favicon only if still empty
+    await importBrandAssets(db); // new brand versions replace older brand ones, never admin uploads
     console.log(
       addedPages.length
         ? `Bloques de contenido agregados: ${addedPages.join(", ")}`

@@ -80,7 +80,7 @@ VPS DonWeb Ubuntu 24.04 (4 vCPU / 8 GB / 30 GB), IP `201.32.131.60` (`vps-652017
 - `SITE_URL` y `SITE_NOINDEX` se leen en el build. Staging en subdominio con `SITE_NOINDEX=true`.
 - Cron: backup 03:15 (`deploy/backup.sh`, copia externa con rclone si `BACKUP_RCLONE_REMOTE`), `db:cleanup` 03:45.
 - CI (`.github/workflows/ci.yml`): format, lint, typecheck, seed, build y e2e contra el server standalone. Para correr e2e contra un Nginx local con certificado propio: `E2E_BASE_URL=https://… E2E_IGNORE_HTTPS=true`.
-- Logo: `assets/brand/` (fuente + WebP generados). El header/footer muestran el «MM» (`logo-mark`) + el nombre en texto (la palabra del logo completo no se lee sobre el footer `stone`). Favicon con fondo ink (la M blanca desaparece sobre blanco a 32 px); `/site-icon` lo sirve y `public/favicon.ico` es el fallback.
+- Logo: `assets/brand/` (fuente + WebP generados). **Logo oficial: `assets/brand/logo.pdf`** (vector de CorelDRAW que pasó el cliente el 26/10/2026; es una tarjeta con fondo negro y franjas rojas). `logo-original.png` sale de ahí (render con `scripts/pdf-to-png.swift`, recorte entre franjas y negro → transparente; ver `scripts/build-brand-assets.ts`). `brand:import` nombra cada versión por hash y reemplaza el logo/ícono de marca anterior en Configuración (no los subidos desde el admin); corre en cada deploy vía `db:seed`. El header/footer muestran el «MM» (`logo-mark`) + el nombre en texto (la palabra del logo completo no se lee sobre el footer `stone`). Favicon con fondo ink (la M blanca desaparece sobre blanco a 32 px); `/site-icon` lo sirve y `public/favicon.ico` es el fallback.
 
 ## Decisiones
 
