@@ -103,7 +103,7 @@ export function MediaPickerDialog({
               </div>
             )}
           </TabsContent>
-          <TabsContent value="upload">
+          <TabsContent value="upload" className="min-h-0 overflow-y-auto">
             <MediaUploader
               compact
               videos={videos}
