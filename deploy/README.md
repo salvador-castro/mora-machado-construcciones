@@ -1130,6 +1130,14 @@ Para enterarte si el sitio se cae **antes que el cliente**:
 
 `/healthz` responde `{"ok":true}` si la app y la base funcionan, y un error 503 si la base no responde.
 
+✅ **Comprobá** que el monitor está llegando al VPS (UptimeRobot hace `HEAD /healthz` cada 5 minutos y tiene que recibir 200):
+
+```bash
+sudo grep -h UptimeRobot /var/log/nginx/*.access.log | tail -3
+```
+
+> En el lanzamiento, editá el monitor y cambiá la URL a `https://moramachadoconstrucciones.com/healthz` (checklist del [paso 16.7](#167-revisar)).
+
 ---
 
 ## 16. Lanzamiento (con el OK del cliente)

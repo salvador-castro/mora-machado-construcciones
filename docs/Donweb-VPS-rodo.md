@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `528e8fc docs: regenerate deploy guide PDF`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `060067f chore: ignore client .docx files in docs/`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -167,7 +167,7 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 3. ~~Cargar MX/SPF/DKIM de Webempresa en Vercel (paso 12)~~ hecho y verificado 20/10/2026 (entra a info@; sale con SPF/DKIM/DMARC en PASS).
 4. ~~Resend: dominio, DNS, API key (paso 13)~~ hecho y probado 20/10/2026.
 5. ~~Backups a Google Drive con rclone (paso 14)~~ hecho y probado 21/10/2026 (cron local OK desde el 18/10; copia en `gdrive:mora-backups`).
-6. Monitoreo UptimeRobot sobre `/healthz` (paso 15).
+6. ~~Monitoreo UptimeRobot sobre `/healthz` (paso 15)~~ ✅ activo, verificado el 26/10/2026 (`HEAD /healthz` cada 5 min → 200). Al lanzar, cambiar la URL del monitor al dominio principal.
 7. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).
 
 **Pendientes de contenido del cliente** (se ven en el inicio del admin):
@@ -1313,6 +1313,14 @@ Para enterarte si el sitio se cae **antes que el cliente**:
 3. Intervalo: 5 minutos. Alerta: tu email.
 
 `/healthz` responde `{"ok":true}` si la app y la base funcionan, y un error 503 si la base no responde.
+
+✅ **Comprobá** que el monitor está llegando al VPS (UptimeRobot hace `HEAD /healthz` cada 5 minutos y tiene que recibir 200):
+
+```bash
+sudo grep -h UptimeRobot /var/log/nginx/*.access.log | tail -3
+```
+
+> En el lanzamiento, editá el monitor y cambiá la URL a `https://moramachadoconstrucciones.com/healthz` (checklist del [paso 16.7](#167-revisar)).
 
 ---
 
