@@ -17,6 +17,7 @@ import {
   type PageContentKey,
 } from "@/lib/content/schemas";
 import { importBrandAssets } from "../scripts/import-brand";
+import { applyClientAnswers } from "./content/client-answers";
 import { importLegacyImages, type LegacyMedia } from "../scripts/import-legacy-images";
 
 const db = createPrismaClient();
@@ -524,50 +525,15 @@ async function main() {
     })),
   });
 
-  // ── Blog (drafts) ───────────────────────────────────────────
-  const blogCategory = await db.blogCategory.create({
+  // ── Blog ────────────────────────────────────────────────────
+  // No posts: the client keeps the blog hidden for now (the nav hides it while empty).
+  await db.blogCategory.create({
     data: { slug: "consejos-de-obra", name: "Consejos de obra", order: 0 },
   });
-  await db.blogPost.createMany({
-    data: [
-      {
-        slug: "que-tener-en-cuenta-antes-de-una-reforma",
-        title: "Qué tener en cuenta antes de empezar una reforma",
-        excerpt:
-          "Definir prioridades, revisar el estado de lo existente y ordenar las etapas evita sorpresas y sobrecostos.",
-        content: [
-          "<p>Una reforma bien planificada empieza mucho antes de mover el primer ladrillo. Antes de arrancar, conviene ordenar algunas decisiones.</p>",
-          "<h2>1. Definí qué querés resolver</h2>",
-          "<p>¿Ganar espacio, mejorar la funcionalidad o renovar terminaciones? Tener claro el objetivo ayuda a priorizar.</p>",
-          "<h2>2. Revisá el estado de lo existente</h2>",
-          "<p>Instalaciones, humedad y estructura condicionan el alcance real de la obra. Un buen relevamiento evita sorpresas.</p>",
-          "<h2>3. Ordená las etapas</h2>",
-          "<p>Dividir la obra en etapas permite avanzar con previsibilidad y adaptar el ritmo a tu presupuesto.</p>",
-        ].join(""),
-        coverId: img.inProgress.id,
-        categoryId: blogCategory.id,
-        status: "DRAFT",
-      },
-      {
-        slug: "solados-exteriores-como-elegir",
-        title: "Solados exteriores: cómo elegir el piso para tu galería y piscina",
-        excerpt:
-          "Antideslizante, resistencia a la intemperie y mantenimiento: lo que importa al elegir un piso exterior.",
-        content: [
-          "<p>El piso exterior está expuesto al sol, la lluvia y el uso intensivo. Elegirlo bien hace la diferencia a lo largo de los años.</p>",
-          "<h2>Seguridad primero</h2>",
-          "<p>Alrededor de la piscina, una superficie antideslizante es indispensable.</p>",
-          "<h2>Pendientes y desagües</h2>",
-          "<p>Un buen solado empieza por una base bien nivelada, con pendientes que alejen el agua de la construcción.</p>",
-          "<h2>Mantenimiento</h2>",
-          "<p>Consultá cuánto cuidado necesita cada material y cómo envejece con el tiempo.</p>",
-        ].join(""),
-        coverId: img.pool.id,
-        categoryId: blogCategory.id,
-        status: "DRAFT",
-      },
-    ],
-  });
+
+  // ── Client questionnaire (26/10/2026) ───────────────────────
+  console.log("Aplicando respuestas del cliente…");
+  await applyClientAnswers(db);
 
   console.log("Importando logo e ícono…");
   await importBrandAssets(db);
