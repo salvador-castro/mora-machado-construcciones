@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { ImageIcon, Images, Trash2 } from "lucide-react";
 import { FormSection } from "@/components/admin/form/field";
+import { VideoBadge } from "@/components/admin/media/media-grid";
 import { MediaPickerDialog } from "@/components/admin/media/media-picker";
 import { SortableList } from "@/components/admin/sortable-list";
 import { Button } from "@/components/admin/ui/button";
@@ -29,7 +30,7 @@ export function GalleryField({
   return (
     <FormSection
       title={`Galería (${fields.length})`}
-      description="Arrastrá para ordenar. El epígrafe es opcional y se ve debajo de la foto."
+      description="Fotos y videos. Arrastrá para ordenar. El epígrafe es opcional y se ve debajo."
     >
       {fields.length === 0 ? (
         <p className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
@@ -52,6 +53,9 @@ export function GalleryField({
                     <img src={media.thumbUrl} alt={media.alt} className="size-full object-cover" />
                   ) : (
                     <ImageIcon className="m-auto mt-10 size-6 text-muted-foreground" />
+                  )}
+                  {media?.videoUrl && (
+                    <VideoBadge duration={media.duration} className="bottom-1 left-1" />
                   )}
                   <div className="absolute top-1 left-1 rounded bg-card/90">{handle}</div>
                   <Button
@@ -86,12 +90,13 @@ export function GalleryField({
         disabled={fields.length >= MAX}
         onClick={() => setPickerOpen(true)}
       >
-        <Images /> Agregar fotos
+        <Images /> Agregar fotos o videos
       </Button>
       <MediaPickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         multiple
+        videos
         onSelect={(selected) => {
           const room = MAX - fields.length;
           const added = selected.slice(0, room);

@@ -6,7 +6,14 @@ import { requireUser } from "@/lib/auth/session";
 import { TAGS } from "@/lib/content/tags";
 import { db } from "@/lib/db";
 import type { MediaListItem } from "@/lib/media/admin-types";
-import { MediaError, processImage, removeMediaFiles, type MediaVariant } from "@/lib/media/process";
+import {
+  isVideoUpload,
+  MediaError,
+  processImage,
+  processVideo,
+  removeMediaFiles,
+  type MediaVariant,
+} from "@/lib/media/process";
 import { mediaUrl } from "@/lib/media/types";
 import { getMediaUsage, type MediaUsage } from "@/lib/media/usage";
 import { fail, invalidate, ok, type ActionResult } from "../action-utils";
@@ -14,7 +21,10 @@ import { fail, invalidate, ok, type ActionResult } from "../action-utils";
 const altSchema = z
   .string()
   .trim()
-  .min(3, "Describí la imagen (mínimo 3 caracteres): es obligatorio para accesibilidad y SEO.")
+  .min(
+    3,
+    "Describí la imagen o el video (mínimo 3 caracteres): es obligatorio para accesibilidad y SEO.",
+  )
   .max(200);
 
 function toListItem(m: {
@@ -26,6 +36,8 @@ function toListItem(m: {
   size: number;
   variants: unknown;
   path: string;
+  videoPath: string | null;
+  duration: number | null;
   createdAt: Date;
 }): MediaListItem {
   const variants = m.variants as MediaVariant[];
@@ -40,6 +52,8 @@ function toListItem(m: {
     size: m.size,
     thumbUrl: mediaUrl(thumb?.path ?? m.path),
     largeUrl: mediaUrl(large?.path ?? m.path),
+    videoUrl: m.videoPath ? mediaUrl(m.videoPath) : null,
+    duration: m.duration,
     createdAt: m.createdAt.toISOString(),
   };
 }
@@ -53,22 +67,30 @@ const listSelect = {
   size: true,
   variants: true,
   path: true,
+  videoPath: true,
+  duration: true,
   createdAt: true,
 } as const;
 
-export async function listMedia(input: { q?: string; take?: number; cursor?: string } = {}) {
+/** `videos: false` lists images only (covers, logos, rich text: places that can't play a video). */
+export async function listMedia(
+  input: { q?: string; take?: number; cursor?: string; videos?: boolean } = {},
+) {
   await requireUser();
   const q = input.q?.trim();
   const take = Math.min(input.take ?? 48, 100);
   const rows = await db.media.findMany({
-    where: q
-      ? {
-          OR: [
-            { alt: { contains: q, mode: "insensitive" } },
-            { originalName: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
+    where: {
+      ...(input.videos === false ? { videoPath: null } : {}),
+      ...(q
+        ? {
+            OR: [
+              { alt: { contains: q, mode: "insensitive" } },
+              { originalName: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: take + 1,
     ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
@@ -99,15 +121,19 @@ export async function uploadMedia(formData: FormData): Promise<ActionResult<Medi
   const alt = altSchema.safeParse(formData.get("alt"));
   if (!alt.success) return fail(alt.error.issues[0].message, { alt: alt.error.issues[0].message });
 
+  const video = isVideoUpload(file);
   try {
-    const processed = await processImage(Buffer.from(await file.arrayBuffer()), file.name);
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const processed = video
+      ? await processVideo(bytes, file.name)
+      : await processImage(bytes, file.name);
     const media = await db.media.create({ data: { ...processed, alt: alt.data } });
     await audit(user.id, "create", "Media", media.id);
-    return ok(toListItem(media), "Imagen subida.");
+    return ok(toListItem(media), video ? "Video subido." : "Imagen subida.");
   } catch (err) {
     if (err instanceof MediaError) return fail(err.message);
     console.error("[media] upload failed", err);
-    return fail("No se pudo procesar la imagen.");
+    return fail(video ? "No se pudo procesar el video." : "No se pudo procesar la imagen.");
   }
 }
 
@@ -134,11 +160,15 @@ export async function deleteMedia(id: string): Promise<ActionResult> {
   }
   const media = await db.media.findUnique({
     where: { id },
-    select: { variants: true, path: true },
+    select: { variants: true, path: true, videoPath: true },
   });
-  if (!media) return fail("La imagen ya no existe.");
+  if (!media) return fail("El archivo ya no existe.");
   await db.media.delete({ where: { id } });
-  await removeMediaFiles([...(media.variants as MediaVariant[]).map((v) => v.path), media.path]);
+  await removeMediaFiles([
+    ...(media.variants as MediaVariant[]).map((v) => v.path),
+    media.path,
+    ...(media.videoPath ? [media.videoPath] : []),
+  ]);
   await audit(user.id, "delete", "Media", id);
-  return ok(undefined, "Imagen eliminada.");
+  return ok(undefined, media.videoPath ? "Video eliminado." : "Imagen eliminada.");
 }

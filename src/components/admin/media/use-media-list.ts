@@ -5,21 +5,27 @@ import type { MediaListItem } from "@/lib/media/admin-types";
 import { listMedia } from "@/server/actions/media";
 
 /** Paged, searchable media list backed by the listMedia server action. */
-export function useMediaList(initial?: { items: MediaListItem[]; nextCursor?: string }) {
+export function useMediaList(
+  initial?: { items: MediaListItem[]; nextCursor?: string },
+  { videos = true }: { videos?: boolean } = {},
+) {
   const [items, setItems] = useState<MediaListItem[]>(initial?.items ?? []);
   const [cursor, setCursor] = useState<string | undefined>(initial?.nextCursor);
   const [query, setQuery] = useState("");
   const [loaded, setLoaded] = useState(!!initial);
   const [pending, startTransition] = useTransition();
 
-  const load = useCallback((q: string) => {
-    startTransition(async () => {
-      const res = await listMedia({ q });
-      setItems(res.items);
-      setCursor(res.nextCursor);
-      setLoaded(true);
-    });
-  }, []);
+  const load = useCallback(
+    (q: string) => {
+      startTransition(async () => {
+        const res = await listMedia({ q, videos });
+        setItems(res.items);
+        setCursor(res.nextCursor);
+        setLoaded(true);
+      });
+    },
+    [videos],
+  );
 
   // Debounced search.
   useEffect(() => {
@@ -35,7 +41,7 @@ export function useMediaList(initial?: { items: MediaListItem[]; nextCursor?: st
   const loadMore = () =>
     startTransition(async () => {
       if (!cursor) return;
-      const res = await listMedia({ q: query, cursor });
+      const res = await listMedia({ q: query, cursor, videos });
       setItems((prev) => [...prev, ...res.items]);
       setCursor(res.nextCursor);
     });

@@ -10,7 +10,7 @@ test("create a project with a gallery photo, publish it, then delete it", async 
   await page.getByLabel("Resumen").fill("Resumen de la obra de prueba.");
   await page.getByRole("switch", { name: "Publicada" }).click();
 
-  await page.getByRole("button", { name: "Agregar fotos" }).click();
+  await page.getByRole("button", { name: "Agregar fotos o videos" }).click();
   const picker = page.getByRole("dialog");
   await picker.locator("button[aria-pressed]").first().click();
   await picker.getByRole("button", { name: /^Agregar 1/ }).click();

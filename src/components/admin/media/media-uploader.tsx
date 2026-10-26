@@ -9,8 +9,13 @@ import type { MediaListItem } from "@/lib/media/admin-types";
 import { uploadMedia } from "@/server/actions/media";
 import { cn } from "@/lib/cn";
 
-const MAX_BYTES = 10 * 1024 * 1024;
-const ACCEPT = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 30 * 1024 * 1024; // keep in sync with lib/media/process.ts
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+// Phones send .mov (quicktime) or .mp4, usually HEVC: the server converts them to H.264.
+const VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/x-m4v", "video/webm", "video/3gpp"];
+
+const isVideo = (file: File) => file.type.startsWith("video/");
 
 type QueueItem = {
   key: string;
@@ -33,10 +38,14 @@ function altFromName(name: string) {
 export function MediaUploader({
   onUploaded,
   compact = false,
+  videos = false,
 }: {
   onUploaded: (items: MediaListItem[]) => void;
   compact?: boolean;
+  /** Also accept videos (converted on the server; slower than images). */
+  videos?: boolean;
 }) {
+  const accept = videos ? [...IMAGE_TYPES, ...VIDEO_TYPES] : IMAGE_TYPES;
   const inputRef = useRef<HTMLInputElement>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -45,12 +54,15 @@ export function MediaUploader({
   function addFiles(files: FileList | File[]) {
     const next: QueueItem[] = [];
     for (const file of Array.from(files)) {
-      if (!ACCEPT.includes(file.type)) {
-        toast.error(`${file.name}: formato no permitido (JPG, PNG, WebP o AVIF).`);
+      if (!accept.includes(file.type)) {
+        toast.error(
+          `${file.name}: formato no permitido (JPG, PNG, WebP o AVIF${videos ? "; videos MP4 o MOV" : ""}).`,
+        );
         continue;
       }
-      if (file.size > MAX_BYTES) {
-        toast.error(`${file.name}: supera los 10 MB.`);
+      const max = isVideo(file) ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+      if (file.size > max) {
+        toast.error(`${file.name}: supera los ${max / 1024 / 1024} MB.`);
         continue;
       }
       next.push({
@@ -95,7 +107,7 @@ export function MediaUploader({
     setBusy(false);
     if (uploaded.length) {
       toast.success(
-        uploaded.length === 1 ? "Imagen subida." : `${uploaded.length} imágenes subidas.`,
+        uploaded.length === 1 ? "Archivo subido." : `${uploaded.length} archivos subidos.`,
       );
       onUploaded(uploaded);
     }
@@ -122,9 +134,17 @@ export function MediaUploader({
       >
         <ImagePlus className="size-8 text-muted-foreground" aria-hidden />
         <div className="space-y-1">
-          <p className="text-sm font-medium">Arrastrá imágenes acá</p>
+          <p className="text-sm font-medium">
+            {videos ? "Arrastrá fotos o videos acá" : "Arrastrá imágenes acá"}
+          </p>
           <p className="text-xs text-muted-foreground">
             JPG, PNG, WebP o AVIF · hasta 10 MB cada una
+            {videos && (
+              <>
+                <br />
+                Videos MP4 o MOV · hasta 30 MB y 3 minutos (tardan un poco más en procesarse)
+              </>
+            )}
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
@@ -133,8 +153,8 @@ export function MediaUploader({
         <input
           ref={inputRef}
           type="file"
-          aria-label="Elegir imágenes para subir"
-          accept={ACCEPT.join(",")}
+          aria-label={videos ? "Elegir fotos o videos para subir" : "Elegir imágenes para subir"}
+          accept={accept.join(",")}
           multiple
           className="sr-only"
           onChange={(e) => {
@@ -147,18 +167,38 @@ export function MediaUploader({
       {queue.length > 0 && (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Describí cada imagen (texto alternativo). Es obligatorio para accesibilidad y SEO.
+            Describí cada {videos ? "foto o video" : "imagen"} (texto alternativo). Es obligatorio
+            para accesibilidad y SEO.
           </p>
           <ul className="space-y-2">
             {queue.map((item) => (
               <li key={item.key} className="flex items-start gap-3 rounded-md border bg-card p-2">
-                {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
-                <img src={item.preview} alt="" className="size-16 shrink-0 rounded object-cover" />
+                {isVideo(item.file) ? (
+                  <video
+                    src={item.preview}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    aria-hidden
+                    className="size-16 shrink-0 rounded bg-muted object-cover"
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
+                  <img
+                    src={item.preview}
+                    alt=""
+                    className="size-16 shrink-0 rounded object-cover"
+                  />
+                )}
                 <div className="min-w-0 flex-1 space-y-1">
                   <p className="truncate text-xs text-muted-foreground">{item.file.name}</p>
                   <Input
                     value={item.alt}
-                    placeholder="Ej.: Solado exterior junto a la piscina"
+                    placeholder={
+                      isVideo(item.file)
+                        ? "Ej.: Hormigonado de la platea con mixer"
+                        : "Ej.: Solado exterior junto a la piscina"
+                    }
                     aria-label={`Texto alternativo para ${item.file.name}`}
                     aria-invalid={item.alt.trim().length < 3 || undefined}
                     disabled={item.status === "uploading"}
@@ -171,7 +211,10 @@ export function MediaUploader({
                   {item.error && <p className="text-xs text-destructive">{item.error}</p>}
                 </div>
                 {item.status === "uploading" ? (
-                  <Loader2 className="mt-2 size-4 animate-spin" aria-label="Subiendo" />
+                  <span className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                    {isVideo(item.file) ? "Procesando video…" : "Subiendo"}
+                  </span>
                 ) : (
                   <Button
                     type="button"
@@ -190,7 +233,7 @@ export function MediaUploader({
           <div className="flex justify-end">
             <Button type="button" onClick={uploadAll} disabled={busy || missingAlt}>
               {busy && <Loader2 className="animate-spin" />}
-              Subir {queue.length === 1 ? "imagen" : `${queue.length} imágenes`}
+              Subir {queue.length === 1 ? "1 archivo" : `${queue.length} archivos`}
             </Button>
           </div>
         </div>

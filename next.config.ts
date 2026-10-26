@@ -12,6 +12,8 @@ const csp = [
   `script-src 'self' 'unsafe-inline' ${TURNSTILE}${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
+  // Uploaded videos (/uploads/*.mp4) and the admin's local preview before uploading.
+  "media-src 'self' blob:",
   "font-src 'self'",
   `connect-src 'self'${isDev ? " ws:" : ""}`,
   // Google Maps embed (Settings → mapa) and the Turnstile widget.
@@ -51,10 +53,11 @@ const nextConfig: NextConfig = {
     return [{ source: "/index.html", destination: "/", permanent: true }];
   },
   experimental: {
-    // Media uploads go one file per action call (max 10 MB each, see lib/media/process.ts).
-    serverActions: { bodySizeLimit: "11mb" },
+    // Media uploads go one file per action call (images up to 10 MB, videos up to
+    // 30 MB: see lib/media/process.ts).
+    serverActions: { bodySizeLimit: "31mb" },
     // /admin/* runs through proxy.ts, which buffers request bodies.
-    proxyClientMaxBodySize: "12mb",
+    proxyClientMaxBodySize: "32mb",
   },
   turbopack: {
     rules: {

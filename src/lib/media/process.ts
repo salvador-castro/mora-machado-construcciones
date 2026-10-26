@@ -1,6 +1,9 @@
+import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import sharp, { type Metadata } from "sharp";
 
 /** Target widths for responsive variants. Never upscaled. */
@@ -25,6 +28,9 @@ export type ProcessedMedia = {
   height: number;
   variants: MediaVariant[];
   blurDataUrl: string;
+  /** Videos only (see processVideo). */
+  videoPath?: string;
+  duration?: number;
 };
 
 export class MediaError extends Error {}
@@ -115,4 +121,109 @@ export async function removeMediaFiles(relPaths: string[]) {
       await rm(abs, { force: true });
     }),
   );
+}
+
+// ─── Video ─────────────────────────────────────────────────────
+
+export const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
+export const MAX_VIDEO_SECONDS = 180;
+/** Longest side of the web version (720p for landscape and portrait). */
+const VIDEO_MAX_SIDE = 1280;
+const run = promisify(execFile);
+
+/** Uploads treated as video: by mime or extension; ffprobe checks the real content. */
+export function isVideoUpload(file: { type: string; name: string }) {
+  return file.type.startsWith("video/") || /\.(mp4|mov|m4v|webm|3gp)$/i.test(file.name);
+}
+
+async function ffmpeg(bin: "ffmpeg" | "ffprobe", args: string[]) {
+  const cmd = (bin === "ffmpeg" ? process.env.FFMPEG_PATH : process.env.FFPROBE_PATH) || bin;
+  try {
+    return await run(cmd, args, { timeout: 180_000, maxBuffer: 10 * 1024 * 1024 });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      throw new MediaError("El servidor no puede procesar videos: falta instalar ffmpeg.");
+    }
+    throw err;
+  }
+}
+
+/**
+ * Validates a video with ffprobe, converts it to an H.264/AAC MP4 that every
+ * browser plays (phones record HEVC, which Chrome/Firefox often can't), at most
+ * 1280 px on the long side, with the moov atom first so it starts streaming
+ * right away. A frame becomes the poster through processImage, so the media
+ * keeps image variants (thumbnails, srcset) and gains `videoPath`.
+ */
+export async function processVideo(input: Buffer, originalName: string): Promise<ProcessedMedia> {
+  if (input.byteLength > MAX_VIDEO_BYTES) {
+    throw new MediaError(`El video supera los ${MAX_VIDEO_BYTES / 1024 / 1024} MB.`);
+  }
+  const work = await mkdtemp(path.join(tmpdir(), "mm-video-"));
+  const src = path.join(work, "in");
+  const out = path.join(work, "out.mp4");
+  const posterFile = path.join(work, "poster.jpg");
+  let poster: ProcessedMedia | undefined;
+  let videoPath: string | undefined;
+  try {
+    await writeFile(src, input);
+
+    let duration: number;
+    try {
+      const { stdout } = await ffmpeg("ffprobe", [
+        ...["-v", "error", "-print_format", "json", "-show_streams", "-show_format", src],
+      ]);
+      const info = JSON.parse(stdout) as {
+        streams?: { codec_type?: string }[];
+        format?: { duration?: string };
+      };
+      if (!info.streams?.some((st) => st.codec_type === "video")) throw new Error("no video");
+      duration = Number(info.format?.duration);
+      if (!Number.isFinite(duration) || duration <= 0) throw new Error("no duration");
+    } catch (err) {
+      if (err instanceof MediaError) throw err;
+      throw new MediaError("El archivo no es un video válido.");
+    }
+    if (duration > MAX_VIDEO_SECONDS) {
+      throw new MediaError(`El video dura más de ${MAX_VIDEO_SECONDS / 60} minutos.`);
+    }
+
+    const side = VIDEO_MAX_SIDE;
+    await ffmpeg("ffmpeg", [
+      ...["-v", "error", "-y", "-i", src, "-map", "0:v:0", "-map", "0:a:0?"],
+      ...["-vf", `scale=${side}:${side}:force_original_aspect_ratio=decrease:force_divisible_by=2`],
+      ...["-c:v", "libx264", "-preset", "medium", "-crf", "26", "-pix_fmt", "yuv420p"],
+      ...["-c:a", "aac", "-b:a", "96k", "-ac", "2", "-movflags", "+faststart", out],
+    ]);
+    await ffmpeg("ffmpeg", [
+      ...["-v", "error", "-y", "-ss", String(Math.min(1, duration / 3)), "-i", out],
+      ...["-frames:v", "1", "-q:v", "2", posterFile],
+    ]);
+
+    poster = await processImage(await readFile(posterFile), originalName);
+    // Same folder and id as the poster variants: <uuid>-<w>.webp → <uuid>.mp4
+    videoPath = poster.path.replace(/-\d+\.webp$/, ".mp4");
+    const dest = path.join(uploadDir(), videoPath);
+    await copyFile(out, dest);
+    await chmod(dest, 0o644); // same as the image variants: Nginx reads them
+    return {
+      ...poster,
+      mime: "video/mp4",
+      size: (await stat(out)).size,
+      videoPath,
+      duration: Math.round(duration * 10) / 10,
+    };
+  } catch (err) {
+    if (poster) {
+      await removeMediaFiles([
+        ...poster.variants.map((v) => v.path),
+        ...(videoPath ? [videoPath] : []),
+      ]);
+    }
+    if (err instanceof MediaError) throw err;
+    console.error("[media] video processing failed", err);
+    throw new MediaError("No se pudo procesar el video.");
+  } finally {
+    await rm(work, { recursive: true, force: true });
+  }
 }

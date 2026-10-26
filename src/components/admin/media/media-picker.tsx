@@ -18,19 +18,31 @@ import { MediaGrid } from "./media-grid";
 import { MediaUploader } from "./media-uploader";
 import { useMediaList } from "./use-media-list";
 
-/** Dialog to choose one or many images from the library (or upload new ones). */
+/**
+ * Dialog to choose one or many images from the library (or upload new ones).
+ * `videos` also lists and accepts videos: only where they can play (project gallery).
+ */
 export function MediaPickerDialog({
   open,
   onOpenChange,
   multiple = false,
+  videos = false,
   onSelect,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   multiple?: boolean;
+  videos?: boolean;
   onSelect: (items: MediaListItem[]) => void;
 }) {
-  const list = useMediaList();
+  const list = useMediaList(undefined, { videos });
+  const noun = videos
+    ? multiple
+      ? "fotos o videos"
+      : "foto o video"
+    : multiple
+      ? "imágenes"
+      : "imagen";
   const [selected, setSelected] = useState<Map<string, MediaListItem>>(new Map());
   const [tab, setTab] = useState("library");
 
@@ -58,7 +70,7 @@ export function MediaPickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90dvh] flex-col sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>{multiple ? "Elegir imágenes" : "Elegir imagen"}</DialogTitle>
+          <DialogTitle>Elegir {noun}</DialogTitle>
           <DialogDescription>Elegí de la biblioteca o subí nuevas.</DialogDescription>
         </DialogHeader>
         <Tabs value={tab} onValueChange={setTab} className="min-h-0 flex-1">
@@ -94,6 +106,7 @@ export function MediaPickerDialog({
           <TabsContent value="upload">
             <MediaUploader
               compact
+              videos={videos}
               onUploaded={(items) => {
                 list.prepend(items);
                 if (multiple) {
