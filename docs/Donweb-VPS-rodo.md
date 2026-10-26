@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `bb05137 fix(admin): new-leads badge updates after deleting a lead`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `37ad87d docs(deploy): ffmpeg and Nginx update for video uploads`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -1736,7 +1736,8 @@ pm2 startOrReload "$REL/deploy/ecosystem.config.cjs" --update-env
 log "Chequeo de salud"
 ok=0
 for _ in $(seq 1 30); do
-  if curl -fsS "http://127.0.0.1:$PORT/healthz" >/dev/null; then ok=1; break; fi
+  # Quiet: the first tries run while the app is still starting (connection refused).
+  if curl -fs "http://127.0.0.1:$PORT/healthz" >/dev/null; then ok=1; break; fi
   sleep 2
 done
 if [ "$ok" -ne 1 ]; then
