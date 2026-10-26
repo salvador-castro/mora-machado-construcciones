@@ -66,6 +66,7 @@ model SiteSettings {
   email                 String?
   address               String?
   coverage              String?
+  openingHours          String?
   mapEmbedUrl           String?
   /// [{ network, url }]
   socials               Json     @default("[]")

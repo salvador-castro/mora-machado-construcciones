@@ -70,6 +70,7 @@ export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
                 </li>
               )}
               {settings.address && <li className="text-paper/88">{settings.address}</li>}
+              {settings.openingHours && <li className="text-paper/88">{settings.openingHours}</li>}
               {settings.coverage && <li className="text-paper/88">{settings.coverage}</li>}
             </ul>
           </div>

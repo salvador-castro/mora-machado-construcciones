@@ -28,6 +28,7 @@ export default async function SettingsPage() {
     email: s.email ?? "",
     address: s.address ?? "",
     coverage: s.coverage ?? "",
+    openingHours: s.openingHours ?? "",
     mapEmbedUrl: s.mapEmbedUrl ?? "",
     socials: socialsSchema.catch([]).parse(s.socials),
     announcementText: s.announcementText ?? "",
