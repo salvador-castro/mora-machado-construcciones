@@ -1,5 +1,4 @@
 import { JsonLd } from "@/components/seo/json-ld";
-import { GridLines } from "@/components/ui/grid-lines";
 import { getPosts, getSettings } from "@/lib/content/queries";
 import { mediaAbsoluteUrl, siteUrl } from "@/lib/seo";
 import { primaryWhatsApp } from "@/lib/whatsapp";
@@ -35,7 +34,6 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
       </main>
       <SiteFooter settings={settings} links={links} />
       {wa && <WhatsAppButton number={wa.number} message={settings.whatsappMessage} />}
-      <GridLines />
       <JsonLd
         data={{
           "@type": "GeneralContractor",
