@@ -185,7 +185,8 @@ export async function getFeaturedProjects() {
   cached(TAGS.projects, TAGS.categories, TAGS.services, TAGS.media);
   const projects = await db.project.findMany({
     where: { published: true, featured: true },
-    orderBy: [{ featuredOrder: "asc" }, { order: "asc" }],
+    // Same order as /obras and the admin list (featuredOrder isn't editable from the admin).
+    orderBy: [{ order: "asc" }, { createdAt: "desc" }],
     select: projectCardSelect,
   });
   return projects.map((p) => ({ ...p, cover: p.cover ? toMediaAsset(p.cover) : null }));
