@@ -13,10 +13,10 @@ test("create an editor, who can log in but not manage users; then delete", async
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Nombre").fill(name);
   await dialog.getByLabel("Email").fill(email);
-  await dialog.getByLabel("Contraseña").fill("corta");
+  await dialog.getByLabel("Contraseña", { exact: true }).fill("corta");
   await dialog.getByRole("button", { name: "Crear usuario" }).click();
   await expect(dialog.getByText(/Mínimo \d+ caracteres/).last()).toBeVisible();
-  await dialog.getByLabel("Contraseña").fill("editor-e2e-password");
+  await dialog.getByLabel("Contraseña", { exact: true }).fill("editor-e2e-password");
   await dialog.getByRole("button", { name: "Crear usuario" }).click();
   await expect(page.getByText("Usuario creado.")).toBeVisible();
   await expect(page.getByRole("row").filter({ hasText: email })).toBeVisible();
@@ -26,7 +26,7 @@ test("create an editor, who can log in but not manage users; then delete", async
   const editor = await ctx.newPage();
   await editor.goto("/admin/login");
   await editor.getByLabel("Email").fill(email);
-  await editor.getByLabel("Contraseña").fill("editor-e2e-password");
+  await editor.getByLabel("Contraseña", { exact: true }).fill("editor-e2e-password");
   await editor.getByRole("button", { name: "Ingresar" }).click();
   await expect(editor).toHaveURL(/\/admin$/);
   await editor.goto("/admin/usuarios");

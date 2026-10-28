@@ -29,15 +29,10 @@ export function BrandMark({
   return (
     <Link href="/" className={cn("inline-flex items-center gap-3", className)}>
       {logo ? (
-        // The mark is decorative here: the name is written next to it.
-        <MediaImage
-          media={logo}
-          alt=""
-          sizes="96px"
-          priority
-          placeholder={false}
-          className="h-9 w-auto"
-        />
+        // The mark is decorative here: the name is written next to it. No `priority`:
+        // React would hoist a preload into every page (the root 404 renders this too,
+        // so even /admin/login preloaded it); a small in-viewport lazy image loads anyway.
+        <MediaImage media={logo} alt="" sizes="96px" placeholder={false} className="h-9 w-auto" />
       ) : (
         <span
           aria-hidden
