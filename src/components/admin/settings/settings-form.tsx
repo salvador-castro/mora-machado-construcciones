@@ -292,6 +292,14 @@ export function SettingsForm({
               <Input id="f-coverage" {...register("coverage")} />
             </Field>
             <Field
+              id="f-openingHours"
+              label="Horario de atención"
+              help="Ej.: Lunes a viernes de 8 a 17 h · Sábados de 8 a 13 h"
+              error={errors.openingHours?.message}
+            >
+              <Input id="f-openingHours" {...register("openingHours")} />
+            </Field>
+            <Field
               id="f-mapEmbedUrl"
               label="Mapa (Google Maps)"
               help="En Google Maps: Compartir → Insertar un mapa → copiá solo la URL del src."

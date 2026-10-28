@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useSyncExternalStore } from "react";
-import { Loader2 } from "lucide-react";
+import { useActionState, useState, useSyncExternalStore } from "react";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Input } from "@/components/admin/ui/input";
 import { Label } from "@/components/admin/ui/label";
@@ -17,6 +17,8 @@ export function LoginForm() {
   const params = new URLSearchParams(search);
   // Server action passed directly → the form works even before hydration.
   const [state, action, pending] = useActionState(login, undefined);
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
 
   return (
     <form action={action} className="space-y-5" noValidate>
@@ -28,34 +30,65 @@ export function LoginForm() {
       )}
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="username"
-          defaultValue={state?.email}
-          required
-          autoFocus
-        />
+        <div className="relative">
+          <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="username"
+            placeholder="tu@email.com"
+            defaultValue={state?.email}
+            aria-invalid={state?.error ? true : undefined}
+            className="h-11 pl-9"
+            required
+            autoFocus
+          />
+        </div>
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Contraseña</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
+        <div className="relative">
+          <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            placeholder="Tu contraseña"
+            aria-invalid={state?.error ? true : undefined}
+            aria-describedby={capsLock ? "caps-lock" : undefined}
+            className="h-11 px-9"
+            onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
+            onBlur={() => setCapsLock(false)}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-pressed={showPassword}
+            title={showPassword ? "Ocultar" : "Mostrar"}
+            className="absolute top-1/2 right-1.5 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            <span className="sr-only">{showPassword ? "Ocultar" : "Mostrar"} lo escrito</span>
+          </button>
+        </div>
+        {capsLock && (
+          <p id="caps-lock" className="text-xs text-muted-foreground">
+            Bloq Mayús está activado.
+          </p>
+        )}
       </div>
       {state?.error && (
         <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
         </p>
       )}
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" className="h-11 w-full" disabled={pending}>
         {pending && <Loader2 className="animate-spin" />}
-        Ingresar
+        {pending ? "Ingresando…" : "Ingresar"}
       </Button>
     </form>
   );

@@ -94,7 +94,7 @@ export default async function HomePage() {
       )}
       {featured && <FeaturedSection content={featured} projects={projects} />}
       {galleryHeader && <GallerySection content={galleryHeader} items={gallery} />}
-      {cta && <CtaSection content={cta} testimonial={testimonial} />}
+      {cta && <CtaSection content={cta} testimonial={testimonial} onHome />}
       {contact && (
         <Section id="contacto" tone="sand" aria-label="Contacto">
           <div className="container-site">

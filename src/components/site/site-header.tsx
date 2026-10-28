@@ -3,8 +3,9 @@ import type { SiteSettingsData } from "@/lib/content/queries";
 import { primaryWhatsApp, telHref, whatsappUrl } from "@/lib/whatsapp";
 import { BrandMark } from "./brand-mark";
 import { MenuOverlay } from "./menu-overlay";
+import type { NavLink } from "./nav-links";
 
-export function SiteHeader({ settings }: { settings: SiteSettingsData }) {
+export function SiteHeader({ settings, links }: { settings: SiteSettingsData; links: NavLink[] }) {
   const wa = primaryWhatsApp(settings.phones);
   const contact = [
     ...(wa
@@ -33,7 +34,7 @@ export function SiteHeader({ settings }: { settings: SiteSettingsData }) {
           <ButtonLink href="/#contacto" size="sm" className="max-sm:hidden">
             Pedir presupuesto
           </ButtonLink>
-          <MenuOverlay contact={contact} />
+          <MenuOverlay contact={contact} links={links} />
         </div>
       </div>
     </header>

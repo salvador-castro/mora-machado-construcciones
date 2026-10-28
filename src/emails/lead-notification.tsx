@@ -10,16 +10,17 @@ export type LeadEmailData = {
   sourcePage: string;
 };
 
-/** Sent to the team for every new lead from the contact form. */
+/**
+ * Sent to the team for every new lead from the contact form. The client answers
+ * from here (WhatsApp or replying to the email), so it never links to the admin.
+ */
 export function LeadNotificationEmail({
   lead,
   brandName,
-  adminUrl,
   whatsappUrl,
 }: {
   lead: LeadEmailData;
   brandName: string;
-  adminUrl: string;
   whatsappUrl: string;
 }) {
   const rows: [string, React.ReactNode][] = [
@@ -69,9 +70,10 @@ export function LeadNotificationEmail({
           Responder por WhatsApp
         </Button>
       </Section>
-      <Text style={{ ...emailText, fontSize: 13, marginTop: 24 }}>
-        <Link href={adminUrl}>Ver la consulta en el panel</Link>
-        {lead.email ? " · Respondiendo este email le escribís directamente." : ""}
+      <Text style={{ ...emailText, marginTop: 16 }}>
+        {lead.email
+          ? `Para responder por email, contestá este mensaje: le llega directo a ${lead.name}.`
+          : "No dejó email: respondé por WhatsApp o llamando al teléfono."}
       </Text>
     </EmailLayout>
   );

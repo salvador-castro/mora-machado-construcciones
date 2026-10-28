@@ -242,6 +242,7 @@ export const settingsSchema = z
       .nullable(),
     address: optionalString(200),
     coverage: optionalString(200),
+    openingHours: optionalString(200),
     mapEmbedUrl: z
       .union([
         z.literal(""),

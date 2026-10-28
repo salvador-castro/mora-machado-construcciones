@@ -22,13 +22,15 @@ export function ServiceGrid({
 }) {
   const Title = headingLevel;
   return (
-    <ul className="grid gap-px overflow-hidden border border-paper/16 bg-paper/16 sm:grid-cols-2 lg:grid-cols-3">
+    // Each card draws its own 1px ring (shadow) into the gap, so an incomplete last
+    // row leaves empty background instead of a gray filler cell.
+    <ul className="grid gap-px p-px sm:grid-cols-2 lg:grid-cols-3">
       {services.map((s, i) => (
         <Reveal
           as="li"
           key={s.id}
           delay={(i % 3) * 0.08}
-          className="group relative flex flex-col bg-ink p-6 transition-colors hover:bg-[color-mix(in_srgb,var(--paper)_4%,var(--ink))] lg:p-8"
+          className="group relative flex flex-col bg-ink p-6 shadow-[0_0_0_1px_color-mix(in_srgb,var(--paper)_16%,transparent)] transition-colors hover:bg-[color-mix(in_srgb,var(--paper)_4%,var(--ink))] lg:p-8"
         >
           <div className="flex items-start justify-between">
             <IconSquare icon={iconByName(s.icon)} size="sm" />

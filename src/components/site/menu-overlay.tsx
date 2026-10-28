@@ -4,13 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import { NAV_LINKS } from "./nav-links";
+import type { NavLink } from "./nav-links";
 import { cn } from "@/lib/cn";
 
 type ContactLine = { label: string; value: string; href?: string };
 
 /** Hamburger button + full-screen navigation overlay with focus trap and Esc to close. */
-export function MenuOverlay({ contact }: { contact: ContactLine[] }) {
+export function MenuOverlay({ contact, links }: { contact: ContactLine[]; links: NavLink[] }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -101,7 +101,7 @@ export function MenuOverlay({ contact }: { contact: ContactLine[] }) {
           <div className="grid flex-1 content-center gap-12 py-12 lg:grid-cols-12">
             <nav aria-label="Principal" className="lg:col-span-8">
               <ul className="space-y-1">
-                {NAV_LINKS.map((link, i) => {
+                {links.map((link, i) => {
                   const active =
                     link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
                   return (

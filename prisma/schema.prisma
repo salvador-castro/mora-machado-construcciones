@@ -66,6 +66,7 @@ model SiteSettings {
   email                 String?
   address               String?
   coverage              String?
+  openingHours          String?
   mapEmbedUrl           String?
   /// [{ network, url }]
   socials               Json     @default("[]")
@@ -115,6 +116,11 @@ model Media {
   variants     Json     @default("[]")
   /// Tiny base64 blur placeholder.
   blurDataUrl  String?
+  /// Videos only: path relative to UPLOAD_DIR of the H.264 MP4. The image fields
+  /// above (path, variants, width, height) then describe its poster frame.
+  videoPath    String?
+  /// Videos only: length in seconds.
+  duration     Float?
   createdAt    DateTime @default(now())
 
   settingsLogos    SiteSettings[] @relation("SettingsLogo")

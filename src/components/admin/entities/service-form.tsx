@@ -139,7 +139,7 @@ export function ServiceForm({
             max={10}
           />
 
-          <SeoSection />
+          <SeoSection summaryField="shortDescription" />
 
           <SaveBar
             pending={pending}

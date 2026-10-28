@@ -491,8 +491,10 @@ sudo fail2ban-client status sshd           # "Status for the jail: sshd" y la li
 
 ```bash
 sudo apt install -y git curl build-essential nginx certbot python3-certbot-nginx rclone \
-  postgresql postgresql-contrib
+  postgresql postgresql-contrib ffmpeg
 ```
+
+> `ffmpeg` convierte los videos que se suben a las obras (los de celular vienen en un formato que muchos navegadores no reproducen). Sin él, subir un video da el error «falta instalar ffmpeg».
 
 ### 4.2 Node.js 22
 
@@ -626,7 +628,8 @@ IP_HASH_SALT="<resultado de openssl rand -base64 16>"
 RESEND_API_KEY=""
 MAIL_FROM="Web Mora Machado <no-reply@moramachadoconstrucciones.com>"
 MAIL_TO_DEFAULT="info@moramachadoconstrucciones.com"
-LEAD_CONFIRMATION_EMAIL="false"
+LEAD_CONFIRMATION_EMAIL="true"
+LEAD_RETENTION_DAYS="730"
 
 # Anti-spam opcional de Cloudflare (dejar vacío)
 TURNSTILE_SITE_KEY=""
@@ -657,7 +660,8 @@ Qué hace cada variable:
 | `RESEND_API_KEY`          | Llave para enviar emails ([paso 13](#13-emails-del-sitio-resend)).                                                                                                                                     |
 | `MAIL_FROM`               | Remitente de los emails del sitio.                                                                                                                                                                     |
 | `MAIL_TO_DEFAULT`         | A quién avisar de las consultas si en el admin no hay emails cargados.                                                                                                                                 |
-| `LEAD_CONFIRMATION_EMAIL` | `true` = además manda un "recibimos tu consulta" a quien escribió.                                                                                                                                     |
+| `LEAD_CONFIRMATION_EMAIL` | `true` = además manda un "recibimos tu consulta" a quien escribió (el cliente lo pidió).                                                                                                               |
+| `LEAD_RETENTION_DAYS`     | Días que se guardan las consultas; la limpieza diaria borra las más viejas. `730` = 2 años, lo que dice la política de privacidad.                                                                     |
 | `BACKUP_*`                | Retención de backups locales y en Google Drive ([paso 14](#14-backups-a-google-drive)).                                                                                                                |
 
 > 🔒 Nunca copies este archivo a GitHub, a un chat ni a un email. Si una clave se filtra, generá otra y reemplazala.
@@ -858,9 +862,10 @@ sudo systemctl reload nginx
 
 - **`X-Real-IP $remote_addr`**: la app la usa para limitar los intentos de login y los envíos del formulario. Sin esto, todos los visitantes cuentan como la misma persona.
 - **No agregar `X-Forwarded-Proto`**: con esa cabecera, Next.js 16 responde **error 500** en las páginas que no existen (en vez de 404).
-- **`client_max_body_size 12m`**: las fotos se suben de a una, hasta 10 MB.
+- **`client_max_body_size 32m`**: los archivos se suben de a uno: fotos hasta 10 MB y videos hasta 30 MB.
+- **`proxy_read_timeout 180s`**: al subir un video, el servidor lo convierte durante el mismo pedido (hasta 1–2 minutos).
 - **Nada de `proxy_cache`**: la caché la maneja la app, y el admin la actualiza al guardar.
-- **`/uploads/`** se sirve directo desde el disco (más rápido). Solo existen archivos `.webp`; cualquier otra cosa da 404.
+- **`/uploads/`** se sirve directo desde el disco (más rápido). Solo existen fotos `.webp` y videos `.mp4`; cualquier otra cosa da 404.
 
 ---
 
@@ -1130,6 +1135,14 @@ Para enterarte si el sitio se cae **antes que el cliente**:
 
 `/healthz` responde `{"ok":true}` si la app y la base funcionan, y un error 503 si la base no responde.
 
+✅ **Comprobá** que el monitor está llegando al VPS (UptimeRobot hace `HEAD /healthz` cada 5 minutos y tiene que recibir 200):
+
+```bash
+sudo grep -h UptimeRobot /var/log/nginx/*.access.log | tail -3
+```
+
+> En el lanzamiento, editá el monitor y cambiá la URL a `https://moramachadoconstrucciones.com/healthz` (checklist del [paso 16.7](#167-revisar)).
+
 ---
 
 ## 16. Lanzamiento (con el OK del cliente)
@@ -1347,6 +1360,38 @@ El sitio sigue funcionando durante el build; el corte es de 1-2 segundos al fina
 
 > **Cambios en la base (migraciones):** se aplican **antes** del build, mientras la versión anterior sigue atendiendo. Por eso tienen que ser "aditivas": agregar columnas o tablas, no borrarlas ni renombrarlas en el mismo deploy.
 
+### Actualizar la configuración de Nginx
+
+Los archivos de `deploy/nginx/` se copian a `/etc/nginx/` a mano (pasos 10 y 16.5): un deploy **no** los actualiza. Cuando cambian en el repo, hay que volver a copiarlos. Antes del lanzamiento (sitio de prueba):
+
+```bash
+cd /var/www/mora/current/deploy/nginx
+sed 's/moramachadoconstrucciones\.com/nuevo.moramachadoconstrucciones.com/g' mora.conf \
+  | sudo tee /etc/nginx/sites-available/mora-staging > /dev/null
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Después del lanzamiento: `sudo cp /var/www/mora/current/deploy/nginx/mora.conf /etc/nginx/sites-available/mora` y el mismo `nginx -t` + `reload`.
+
+| Cambio                        | Fecha      | Para qué                                                        |
+| ----------------------------- | ---------- | --------------------------------------------------------------- |
+| Videos (`.mp4`, 32 MB, 180 s) | 26/10/2026 | Subir videos a las obras: además, `sudo apt install -y ffmpeg`. |
+
+### Cargar contenido con un script (una sola vez)
+
+Algunos cambios de contenido vienen en un script en lugar de cargarse a mano en el admin. Se corren **una sola vez**, después del deploy que los trae, porque pisan los campos que tocan:
+
+```bash
+cd /var/www/mora/current && pnpm content:client-answers
+pm2 reload mora          # obligatorio: la app guarda el contenido en caché en memoria
+```
+
+> **Por qué el `pm2 reload`:** cuando se guarda desde el admin, la app limpia su caché sola. Un script escribe directo en la base y la app no se entera: sin el reload, el sitio sigue mostrando el contenido viejo.
+
+| Script                   | Qué carga                                                                                 | Estado                 |
+| ------------------------ | ----------------------------------------------------------------------------------------- | ---------------------- |
+| `content:client-answers` | Respuestas del cuestionario del cliente (26/10/2026): `prisma/content/client-answers.ts`. | Aplicado el 26/10/2026 |
+
 ### Volver a la versión anterior
 
 ```bash
@@ -1414,7 +1459,7 @@ pm2 reload mora
 ## Anexo: cómo funciona por dentro
 
 ```
-Visitante ──https──▶ Nginx (443) ──┬─▶ /uploads/*.webp → disco (/var/www/mora/uploads)
+Visitante ──https──▶ Nginx (443) ──┬─▶ /uploads/*.webp|mp4 → disco (/var/www/mora/uploads)
                                    └─▶ todo lo demás → Next.js (127.0.0.1:3000, PM2) ──▶ PostgreSQL (localhost:5432)
                                                                                       └─▶ Resend (emails)
 ```

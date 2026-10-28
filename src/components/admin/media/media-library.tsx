@@ -28,7 +28,7 @@ import { Label } from "@/components/admin/ui/label";
 import type { MediaListItem } from "@/lib/media/admin-types";
 import type { MediaUsage } from "@/lib/media/usage";
 import { deleteMedia, mediaUsage, updateMediaAlt } from "@/server/actions/media";
-import { MediaGrid } from "./media-grid";
+import { formatDuration, MediaGrid } from "./media-grid";
 import { MediaUploader } from "./media-uploader";
 import { useMediaList } from "./use-media-list";
 
@@ -48,7 +48,7 @@ export function MediaLibrary({
 
   return (
     <div className="space-y-6">
-      <MediaUploader onUploaded={list.prepend} />
+      <MediaUploader videos onUploaded={list.prepend} />
 
       <div className="relative max-w-sm">
         <Search className="pointer-events-none absolute top-2.5 left-3 size-4 text-muted-foreground" />
@@ -57,7 +57,7 @@ export function MediaLibrary({
           onChange={(e) => list.setQuery(e.target.value)}
           placeholder="Buscar por descripción o archivo"
           className="pl-9"
-          aria-label="Buscar imágenes"
+          aria-label="Buscar imágenes y videos"
         />
       </div>
 
@@ -136,17 +136,30 @@ function MediaDetailDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Detalle de imagen</DialogTitle>
+          <DialogTitle>{item.videoUrl ? "Detalle del video" : "Detalle de imagen"}</DialogTitle>
           <DialogDescription className="truncate">
             {item.originalName} · {item.width}×{item.height} px · {formatSize(item.size)}
+            {item.duration != null && ` · ${formatDuration(item.duration)}`}
           </DialogDescription>
         </DialogHeader>
-        {/* eslint-disable-next-line @next/next/no-img-element -- admin preview */}
-        <img
-          src={item.largeUrl}
-          alt={item.alt}
-          className="max-h-[50dvh] w-full rounded-md bg-muted object-contain"
-        />
+        {item.videoUrl ? (
+          <video
+            src={item.videoUrl}
+            poster={item.largeUrl}
+            controls
+            playsInline
+            preload="metadata"
+            aria-label={item.alt}
+            className="max-h-[50dvh] w-full rounded-md bg-muted object-contain"
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element -- admin preview
+          <img
+            src={item.largeUrl}
+            alt={item.alt}
+            className="max-h-[50dvh] w-full rounded-md bg-muted object-contain"
+          />
+        )}
         <div className="space-y-2">
           <Label htmlFor="media-alt">Texto alternativo</Label>
           <div className="flex gap-2">
@@ -188,7 +201,9 @@ function MediaDetailDialog({
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>¿Eliminar esta imagen?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {item.videoUrl ? "¿Eliminar este video?" : "¿Eliminar esta imagen?"}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
                   Se borran el archivo y todas sus versiones. No se puede deshacer.
                 </AlertDialogDescription>

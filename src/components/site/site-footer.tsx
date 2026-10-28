@@ -4,7 +4,7 @@ import { telHref, whatsappUrl } from "@/lib/whatsapp";
 import { ButtonLink } from "@/components/ui/button";
 import { BrandMark } from "./brand-mark";
 import { CurrentYear } from "./current-year";
-import { NAV_LINKS } from "./nav-links";
+import type { NavLink } from "./nav-links";
 
 const SOCIAL_LABELS: Record<string, string> = {
   instagram: "Instagram",
@@ -14,7 +14,7 @@ const SOCIAL_LABELS: Record<string, string> = {
   tiktok: "TikTok",
 };
 
-export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
+export function SiteFooter({ settings, links }: { settings: SiteSettingsData; links: NavLink[] }) {
   return (
     <footer className="tone-stone">
       <div className="container-site grid gap-12 py-16 lg:grid-cols-12 lg:py-24">
@@ -34,7 +34,7 @@ export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
         <nav aria-label="Pie de página" className="lg:col-span-3 lg:col-start-7">
           <p className="mb-4 text-eyebrow text-paper/88">Navegación</p>
           <ul className="space-y-2">
-            {NAV_LINKS.map((l) => (
+            {links.map((l) => (
               <li key={l.href}>
                 <Link href={l.href} className="hover:underline">
                   {l.label}
@@ -70,6 +70,7 @@ export function SiteFooter({ settings }: { settings: SiteSettingsData }) {
                 </li>
               )}
               {settings.address && <li className="text-paper/88">{settings.address}</li>}
+              {settings.openingHours && <li className="text-paper/88">{settings.openingHours}</li>}
               {settings.coverage && <li className="text-paper/88">{settings.coverage}</li>}
             </ul>
           </div>

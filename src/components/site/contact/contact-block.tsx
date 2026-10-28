@@ -64,6 +64,12 @@ export function ContactBlock({
               <dd className="text-right">{settings.address}</dd>
             </div>
           )}
+          {settings.openingHours && (
+            <div className="flex items-baseline justify-between gap-4 py-4">
+              <dt className="text-eyebrow text-ink/72">Horario</dt>
+              <dd className="text-right">{settings.openingHours}</dd>
+            </div>
+          )}
           {settings.coverage && (
             <div className="flex items-baseline justify-between gap-4 py-4">
               <dt className="text-eyebrow text-ink/72">Cobertura</dt>

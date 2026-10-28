@@ -59,7 +59,8 @@ pm2 startOrReload "$REL/deploy/ecosystem.config.cjs" --update-env
 log "Chequeo de salud"
 ok=0
 for _ in $(seq 1 30); do
-  if curl -fsS "http://127.0.0.1:$PORT/healthz" >/dev/null; then ok=1; break; fi
+  # Quiet: the first tries run while the app is still starting (connection refused).
+  if curl -fs "http://127.0.0.1:$PORT/healthz" >/dev/null; then ok=1; break; fi
   sleep 2
 done
 if [ "$ok" -ne 1 ]; then

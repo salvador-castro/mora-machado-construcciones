@@ -19,7 +19,13 @@ test("a contact form submission shows up in the admin and can be followed up", a
     /wa\.me\/.+text=/,
   );
 
-  await page.goto("/admin/consultas?estado=NEW");
+  // Open it from the panel menu, like a person would.
+  await page.goto("/admin");
+  await page
+    .getByRole("navigation")
+    .getByRole("link", { name: /^Consultas/ })
+    .click();
+  await expect(page).toHaveURL(/\/admin\/consultas$/);
   await page.getByRole("link", { name: new RegExp(name) }).click();
   await expect(page.getByRole("heading", { name, level: 1 })).toBeVisible();
   await expect(
@@ -45,6 +51,34 @@ test("a contact form submission shows up in the admin and can be followed up", a
   await page.getByRole("alertdialog").getByRole("button", { name: "Eliminar" }).click();
   await expect(page).toHaveURL(/\/admin\/consultas$/);
   await expect(page.getByRole("link", { name: new RegExp(name) })).toHaveCount(0);
+});
+
+test("deleting a new lead updates the new-leads badge in the menu", async ({ page }) => {
+  const name = `Lead badge E2E ${Date.now()}`;
+  await page.goto("/contacto");
+  const form = page.locator("#contacto form");
+  await form.getByLabel("Nombre").fill(name);
+  await form.getByLabel("Teléfono").fill("03487-555555");
+  await form.getByLabel("Contanos sobre tu proyecto").fill("Consulta para probar el contador.");
+  await form.getByLabel(/Acepto/).check();
+  await form.getByRole("button", { name: "Enviar consulta" }).click();
+  await expect(page.getByText("¡Gracias! Recibimos tu consulta.")).toBeVisible();
+
+  await page.goto("/admin");
+  const menuLink = page.getByRole("navigation").getByRole("link", { name: /^Consultas/ });
+  // "Consultas 3 nuevas" → 3; no badge when there are none.
+  const badge = async () => Number((await menuLink.textContent())?.match(/\d+/)?.[0] ?? 0);
+  const before = await badge();
+  expect(before).toBeGreaterThan(0);
+
+  await menuLink.click();
+  await page.getByRole("link", { name: new RegExp(name) }).click();
+  await page.getByRole("button", { name: "Eliminar consulta" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Eliminar" }).click();
+  await expect(page).toHaveURL(/\/admin\/consultas$/);
+  // The badge lives in the panel layout, which client navigation doesn't re-render
+  // (regression: it kept the old number until a reload).
+  await expect.poll(badge).toBe(before - 1);
 });
 
 test("honeypot submissions are accepted silently but not stored", async ({ page }) => {

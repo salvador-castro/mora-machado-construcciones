@@ -8,7 +8,7 @@ setup("log in as the dev admin", async ({ page }) => {
 
   await page.goto("/admin/login");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Contraseña").fill(password);
+  await page.getByLabel("Contraseña", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Ingresar" }).click();
   await expect(page).toHaveURL(/\/admin$/);
   await page.context().storageState({ path: "tests/e2e/.auth/admin.json" });

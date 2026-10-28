@@ -40,7 +40,7 @@ Lenguaje visual editorial inspirado en el template "Foster & Reeves" (BYQ Studio
 
 - Contenedor: `max-width: 1440px`, gutter 16px (mobile) / 24px (tablet) / 40px (desktop).
 - Grilla: 4 cols mobile, 8 tablet, 12 desktop.
-- **Grilla de fondo**: overlay fijo con líneas verticales de 1px (blanco 10 % con `mix-blend-mode: difference`: se lee más oscuro sobre claro y más claro sobre oscuro), alineadas al contenedor: bordes + cada 3 de las 12 columnas (3 líneas mobile / 5 desde md).
+- **Grilla de fondo** (quitada del sitio público el 27/10/2026: cruzaba tarjetas y fotos; `GridLines` queda solo en /styleguide): overlay fijo con líneas verticales de 1px (blanco 10 % con `mix-blend-mode: difference`: se lee más oscuro sobre claro y más claro sobre oscuro), alineadas al contenedor: bordes + cada 3 de las 12 columnas (3 líneas mobile / 5 desde md).
 - Ritmo vertical de secciones: 80px mobile / 120px desktop. Secciones alternan oscuro/claro.
 
 ## 4. Componentes

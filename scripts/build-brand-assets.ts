@@ -1,6 +1,10 @@
 /**
  * Generates web-ready brand assets from assets/brand/logo-original.png
- * (1024² PNG with transparency):
+ * (PNG with transparency: "MM" mark, a gap, then the wordmark).
+ * logo-original.png comes from the client's vector logo, assets/brand/logo.pdf
+ * (a card: black background between red bands), rendered with
+ * `swift scripts/pdf-to-png.swift assets/brand/logo.pdf <out.png> 8192`, cropped
+ * between the bands with the black keyed out to transparent, and resized to 2048 px.
  *   logo-full.webp  — full logo, trimmed (footer, OG)
  *   logo-mark.webp  — "MM" mark only, trimmed (header)
  *   favicon.png     — mark centered on an ink square (512²), source for /site-icon.

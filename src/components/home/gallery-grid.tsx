@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Play, X } from "lucide-react";
 import { MediaImage } from "@/components/ui/media-image";
-import type { MediaAsset } from "@/lib/media/types";
+import { mediaUrl, type MediaAsset } from "@/lib/media/types";
 import { cn } from "@/lib/cn";
 
 export type GalleryItem = {
@@ -13,7 +13,10 @@ export type GalleryItem = {
   media: MediaAsset;
 };
 
-/** Masonry grid (CSS columns) + native <dialog> lightbox with keyboard navigation. */
+/**
+ * Masonry grid (CSS columns) + native <dialog> lightbox with keyboard navigation.
+ * Videos show their poster with a play mark and play (with controls) in the lightbox.
+ */
 export function GalleryGrid({ items }: { items: GalleryItem[] }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [current, setCurrent] = useState<number | null>(null);
@@ -56,8 +59,8 @@ export function GalleryGrid({ items }: { items: GalleryItem[] }) {
               <button
                 type="button"
                 onClick={() => open(i)}
-                className="group block w-full overflow-hidden"
-                aria-label={`Ampliar: ${item.caption ?? item.media.alt}`}
+                aria-label={`${item.media.videoPath ? "Ver video" : "Ampliar"}: ${item.caption ?? item.media.alt}`}
+                className="group relative block w-full overflow-hidden"
               >
                 <MediaImage
                   media={item.media}
@@ -67,6 +70,16 @@ export function GalleryGrid({ items }: { items: GalleryItem[] }) {
                     item.shape === "wide" && "aspect-video",
                   )}
                 />
+                {item.media.videoPath && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 flex items-center justify-center bg-ink/16 transition-colors group-hover:bg-ink/28"
+                  >
+                    <span className="inline-flex size-16 items-center justify-center rounded-full bg-paper/92 text-ink shadow-lg">
+                      <Play className="ml-1 size-7 fill-current" />
+                    </span>
+                  </span>
+                )}
               </button>
               {item.caption && (
                 <figcaption className="mt-2 text-sm text-ink/64">{item.caption}</figcaption>
@@ -99,12 +112,25 @@ export function GalleryGrid({ items }: { items: GalleryItem[] }) {
               </button>
             </div>
             <figure className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4 pb-4">
-              <MediaImage
-                key={active.id}
-                media={active.media}
-                sizes="100vw"
-                className="max-h-full min-h-0 w-auto max-w-full bg-transparent object-contain"
-              />
+              {active.media.videoPath ? (
+                <video
+                  key={active.id}
+                  src={mediaUrl(active.media.videoPath)}
+                  poster={mediaUrl(active.media.variants.at(-1)?.path ?? "")}
+                  controls
+                  autoPlay
+                  playsInline
+                  aria-label={active.caption ?? active.media.alt}
+                  className="max-h-full min-h-0 w-auto max-w-full"
+                />
+              ) : (
+                <MediaImage
+                  key={active.id}
+                  media={active.media}
+                  sizes="100vw"
+                  className="max-h-full min-h-0 w-auto max-w-full bg-transparent object-contain"
+                />
+              )}
               {active.caption && (
                 <figcaption className="text-sm text-paper/72">{active.caption}</figcaption>
               )}

@@ -1,9 +1,9 @@
 import { JsonLd } from "@/components/seo/json-ld";
-import { GridLines } from "@/components/ui/grid-lines";
-import { getSettings } from "@/lib/content/queries";
+import { getPosts, getSettings } from "@/lib/content/queries";
 import { mediaAbsoluteUrl, siteUrl } from "@/lib/seo";
 import { primaryWhatsApp } from "@/lib/whatsapp";
 import { AnnouncementBar } from "./announcement-bar";
+import { navLinks } from "./nav-links";
 import { PreviewBanner } from "./preview-banner";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
@@ -11,7 +11,8 @@ import { WhatsAppButton } from "./whatsapp-button";
 
 /** Public site frame. Used by the (site) layout and the root 404. */
 export async function SiteChrome({ children }: { children: React.ReactNode }) {
-  const settings = await getSettings();
+  const [settings, posts] = await Promise.all([getSettings(), getPosts()]);
+  const links = navLinks({ blog: posts.length > 0 });
   const wa = primaryWhatsApp(settings.phones);
   const mainPhone = wa ?? settings.phones[0];
 
@@ -27,13 +28,12 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
       {settings.announcementEnabled && settings.announcementText && (
         <AnnouncementBar text={settings.announcementText} url={settings.announcementUrl} />
       )}
-      <SiteHeader settings={settings} />
+      <SiteHeader settings={settings} links={links} />
       <main id="contenido" className="flex-1">
         {children}
       </main>
-      <SiteFooter settings={settings} />
+      <SiteFooter settings={settings} links={links} />
       {wa && <WhatsAppButton number={wa.number} message={settings.whatsappMessage} />}
-      <GridLines />
       <JsonLd
         data={{
           "@type": "GeneralContractor",

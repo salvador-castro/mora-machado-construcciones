@@ -5,8 +5,14 @@ import { getPageContent, getPosts } from "@/lib/content/queries";
 import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata() {
-  const header = await getPageContent("blog.index");
-  return pageMetadata({ title: "Blog", description: header?.subtitle, path: "/blog" });
+  const [header, posts] = await Promise.all([getPageContent("blog.index"), getPosts()]);
+  // Hidden blog (no published posts): not linked from the nav, kept out of search results.
+  return pageMetadata({
+    title: "Blog",
+    description: header?.subtitle,
+    path: "/blog",
+    noindex: posts.length === 0,
+  });
 }
 
 export default async function BlogPage() {

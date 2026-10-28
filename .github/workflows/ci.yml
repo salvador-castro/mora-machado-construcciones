@@ -49,6 +49,8 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+      # Video uploads are converted with ffmpeg (lib/media/process.ts).
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck

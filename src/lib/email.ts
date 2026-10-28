@@ -6,7 +6,6 @@ import { LeadConfirmationEmail } from "@/emails/lead-confirmation";
 import { LeadNotificationEmail, type LeadEmailData } from "@/emails/lead-notification";
 import { TestEmail } from "@/emails/test-email";
 import { db } from "@/lib/db";
-import { siteUrl } from "@/lib/site-url";
 import { phonesSchema } from "@/lib/content/schemas";
 import { primaryWhatsApp, whatsappUrl } from "@/lib/whatsapp";
 
@@ -106,8 +105,10 @@ export async function sendLeadNotification(
           react: createElement(LeadNotificationEmail, {
             lead,
             brandName: brand,
-            adminUrl: siteUrl(`/admin/consultas/${lead.id}`),
-            whatsappUrl: whatsappUrl(lead.phone),
+            whatsappUrl: whatsappUrl(
+              lead.phone,
+              `Hola ${lead.name.split(" ")[0]}, te escribo de ${brand} por la consulta que dejaste en la web.`,
+            ),
           }),
         })
       : { status: "FAILED", error: "No hay destinatarios configurados." };

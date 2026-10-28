@@ -1,6 +1,6 @@
 # Donweb-VPS-rodo — contexto completo del proyecto
 
-> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `528e8fc docs: regenerate deploy guide PDF`).
+> Documento de referencia para el proyecto **Donweb-VPS-rodo** en Claude. Generado desde el repositorio (las partes 2 y 3 se regeneran con `pnpm docs:pdf`). Vive en `docs/Donweb-VPS-rodo.md` (y en PDF en `docs/Donweb-VPS-rodo.pdf`) (último commit en `develop`: `37ad87d docs(deploy): ffmpeg and Nginx update for video uploads`).
 > Contiene: datos del proyecto y del servidor, estado actual, decisiones, la guía de despliegue paso a paso completa y copias exactas de los archivos de `deploy/`.
 > **No contiene contraseñas ni claves**: esas viven solo en `/var/www/mora/shared/.env` del VPS y en el gestor de contraseñas.
 
@@ -150,14 +150,13 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 
 ## 8. Estado actual y pendientes
 
-**Hecho (código):** sitio + admin completos (F1–F10), Resend, SEO/a11y (Lighthouse 100 en a11y/BP/SEO), seguridad (CSP, rate limits), 26 tests e2e verdes, CI de GitHub Actions, scripts de deploy probados en local (primer deploy con base vacía, backup y restore, Nginx con HTTPS local).
+**Hecho (código):** sitio + admin completos (F1–F10), Resend, SEO/a11y (Lighthouse 100 en a11y/BP/SEO), seguridad (CSP, rate limits), 26 tests e2e verdes, CI de GitHub Actions (verde desde el 21/10/2026), scripts de deploy probados en local (primer deploy con base vacía, backup y restore, Nginx con HTTPS local).
 
 **Hecho en el VPS (17/10/2026):** pasos 2 a 11 de la guía. El sitio de prueba funciona en **https://nuevo.moramachadoconstrucciones.com** (rama `develop`, `SITE_NOINDEX=true`), con certificado de Let's Encrypt (`certonly --webroot`), Nginx 1.24, PM2 `mora` y Postgres `mora_prod`. Lo que difería de la guía ya está corregido en el repo: `listen 443 ssl http2` en `mora.conf`, la copia de `options-ssl-nginx.conf`, `checkout develop` tras clonar, backups con `umask 077`, y el endurecimiento propio de la imagen de DonWeb (pasos 2–3).
 
 **No probado todavía:**
 
 - Rollback automático de `deploy.sh` cuando `/healthz` falla (el segundo deploy con `pm2 reload` sí se probó el 20/10/2026).
-- El workflow de CI.
 - Restaurar un backup en el VPS (14.5).
 
 **Pasos pendientes, en orden:**
@@ -167,16 +166,21 @@ En 15–20 días empieza el **sistema de gestión** (empleados, registro diario,
 3. ~~Cargar MX/SPF/DKIM de Webempresa en Vercel (paso 12)~~ hecho y verificado 20/10/2026 (entra a info@; sale con SPF/DKIM/DMARC en PASS).
 4. ~~Resend: dominio, DNS, API key (paso 13)~~ hecho y probado 20/10/2026.
 5. ~~Backups a Google Drive con rclone (paso 14)~~ hecho y probado 21/10/2026 (cron local OK desde el 18/10; copia en `gdrive:mora-backups`).
-6. Monitoreo UptimeRobot sobre `/healthz` (paso 15).
-7. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).
+6. ~~Monitoreo UptimeRobot sobre `/healthz` (paso 15)~~ ✅ activo, verificado el 26/10/2026 (`HEAD /healthz` cada 5 min → 200). Al lanzar, cambiar la URL del monitor al dominio principal.
+7. ~~Contenido del cuestionario del cliente~~ ✅ aplicado en el VPS el 26/10/2026 (`pnpm content:client-answers` + `pm2 reload mora`, que es obligatorio después de un script de contenido porque la caché vive en memoria).
+8. Videos en las obras (26/10/2026): en el VPS, `sudo apt install -y ffmpeg`, deployar y volver a copiar la config de Nginx del sitio de prueba (guía, paso 17 «Actualizar la configuración de Nginx»): ahora sirve `.mp4`, acepta archivos de hasta 32 MB y espera 180 s.
+9. OK del cliente → lanzamiento (paso 16): merge `develop` → `main`, `.env` a producción, DNS al VPS, certificado, `deploy.sh main`, repo a privado. Unos días después: mudar el DNS de Vercel a DonWeb (paso 16.8).
+
+**Cuestionario del cliente (respondido el 26/10/2026)** → `prisma/content/client-answers.ts`: ubicación Tali Puerto (Camino de la Costa Brava km 6,5, Zárate), horario L–V 8–17 y S 8–13, obras en todo el país, Instagram y TikTok `moramachadoconstrucciones`, barra «Agenda abierta para obras 2027» activa, formulario sin rangos de presupuesto, acuse por email a quien consulta, diferencial «Llave en mano», servicios nuevos «Plateas y pisos de hormigón» (el que más quieren vender) y «Pulido de pisos», obra «Pisos, veredas y calles de acceso» (Parque Industrial Zárate, 2026, 3.800 m², 30 días; oculta hasta tener fotos), historia desde 2001 en Nosotros, responsable de datos en la política de privacidad (Rodolfo Daniel Machado, CUIT 20-25661207-1, con el domicilio comercial; consultas guardadas 2 años) y blog oculto. Lo revisan Rodo y Sofi juntos para dar el OK.
 
 **Pendientes de contenido del cliente** (se ven en el inicio del admin):
 
-- Elegir color de acento: lima (template) o terracota (marca actual).
-- Fotos adicionales en alta resolución (las actuales son de 1200 px), logos de clientes y testimonios reales.
-- Revisar textos redactados: intro de inicio, Nosotros, detalle de servicios, blog y política de privacidad.
-- Confirmar rangos de presupuesto del formulario.
-- Mejorar los textos alternativos de las fotos de galería (hoy «Detalle de obra»).
+- OK de los textos nuevos (historia, «Llave en mano», los dos servicios nuevos, política de privacidad).
+- Fotos en alta resolución, foto de portada, foto del equipo y logo original.
+- Fotos de la obra nueva y permiso para mostrarla; logos de clientes y testimonios.
+- Textos alternativos de las fotos de galería (hoy «Detalle de obra»).
+- Perfil de Google Business.
+- Color de acento: lima (template) o terracota (marca actual).
 
 ---
 
@@ -675,8 +679,10 @@ sudo fail2ban-client status sshd           # "Status for the jail: sshd" y la li
 
 ```bash
 sudo apt install -y git curl build-essential nginx certbot python3-certbot-nginx rclone \
-  postgresql postgresql-contrib
+  postgresql postgresql-contrib ffmpeg
 ```
+
+> `ffmpeg` convierte los videos que se suben a las obras (los de celular vienen en un formato que muchos navegadores no reproducen). Sin él, subir un video da el error «falta instalar ffmpeg».
 
 ### 4.2 Node.js 22
 
@@ -810,7 +816,8 @@ IP_HASH_SALT="<resultado de openssl rand -base64 16>"
 RESEND_API_KEY=""
 MAIL_FROM="Web Mora Machado <no-reply@moramachadoconstrucciones.com>"
 MAIL_TO_DEFAULT="info@moramachadoconstrucciones.com"
-LEAD_CONFIRMATION_EMAIL="false"
+LEAD_CONFIRMATION_EMAIL="true"
+LEAD_RETENTION_DAYS="730"
 
 # Anti-spam opcional de Cloudflare (dejar vacío)
 TURNSTILE_SITE_KEY=""
@@ -841,7 +848,8 @@ Qué hace cada variable:
 | `RESEND_API_KEY`          | Llave para enviar emails ([paso 13](#13-emails-del-sitio-resend)).                                                                                                                                     |
 | `MAIL_FROM`               | Remitente de los emails del sitio.                                                                                                                                                                     |
 | `MAIL_TO_DEFAULT`         | A quién avisar de las consultas si en el admin no hay emails cargados.                                                                                                                                 |
-| `LEAD_CONFIRMATION_EMAIL` | `true` = además manda un "recibimos tu consulta" a quien escribió.                                                                                                                                     |
+| `LEAD_CONFIRMATION_EMAIL` | `true` = además manda un "recibimos tu consulta" a quien escribió (el cliente lo pidió).                                                                                                               |
+| `LEAD_RETENTION_DAYS`     | Días que se guardan las consultas; la limpieza diaria borra las más viejas. `730` = 2 años, lo que dice la política de privacidad.                                                                     |
 | `BACKUP_*`                | Retención de backups locales y en Google Drive ([paso 14](#14-backups-a-google-drive)).                                                                                                                |
 
 > 🔒 Nunca copies este archivo a GitHub, a un chat ni a un email. Si una clave se filtra, generá otra y reemplazala.
@@ -1042,9 +1050,10 @@ sudo systemctl reload nginx
 
 - **`X-Real-IP $remote_addr`**: la app la usa para limitar los intentos de login y los envíos del formulario. Sin esto, todos los visitantes cuentan como la misma persona.
 - **No agregar `X-Forwarded-Proto`**: con esa cabecera, Next.js 16 responde **error 500** en las páginas que no existen (en vez de 404).
-- **`client_max_body_size 12m`**: las fotos se suben de a una, hasta 10 MB.
+- **`client_max_body_size 32m`**: los archivos se suben de a uno: fotos hasta 10 MB y videos hasta 30 MB.
+- **`proxy_read_timeout 180s`**: al subir un video, el servidor lo convierte durante el mismo pedido (hasta 1–2 minutos).
 - **Nada de `proxy_cache`**: la caché la maneja la app, y el admin la actualiza al guardar.
-- **`/uploads/`** se sirve directo desde el disco (más rápido). Solo existen archivos `.webp`; cualquier otra cosa da 404.
+- **`/uploads/`** se sirve directo desde el disco (más rápido). Solo existen fotos `.webp` y videos `.mp4`; cualquier otra cosa da 404.
 
 ---
 
@@ -1314,6 +1323,14 @@ Para enterarte si el sitio se cae **antes que el cliente**:
 
 `/healthz` responde `{"ok":true}` si la app y la base funcionan, y un error 503 si la base no responde.
 
+✅ **Comprobá** que el monitor está llegando al VPS (UptimeRobot hace `HEAD /healthz` cada 5 minutos y tiene que recibir 200):
+
+```bash
+sudo grep -h UptimeRobot /var/log/nginx/*.access.log | tail -3
+```
+
+> En el lanzamiento, editá el monitor y cambiá la URL a `https://moramachadoconstrucciones.com/healthz` (checklist del [paso 16.7](#167-revisar)).
+
 ---
 
 ## 16. Lanzamiento (con el OK del cliente)
@@ -1531,6 +1548,38 @@ El sitio sigue funcionando durante el build; el corte es de 1-2 segundos al fina
 
 > **Cambios en la base (migraciones):** se aplican **antes** del build, mientras la versión anterior sigue atendiendo. Por eso tienen que ser "aditivas": agregar columnas o tablas, no borrarlas ni renombrarlas en el mismo deploy.
 
+### Actualizar la configuración de Nginx
+
+Los archivos de `deploy/nginx/` se copian a `/etc/nginx/` a mano (pasos 10 y 16.5): un deploy **no** los actualiza. Cuando cambian en el repo, hay que volver a copiarlos. Antes del lanzamiento (sitio de prueba):
+
+```bash
+cd /var/www/mora/current/deploy/nginx
+sed 's/moramachadoconstrucciones\.com/nuevo.moramachadoconstrucciones.com/g' mora.conf \
+  | sudo tee /etc/nginx/sites-available/mora-staging > /dev/null
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Después del lanzamiento: `sudo cp /var/www/mora/current/deploy/nginx/mora.conf /etc/nginx/sites-available/mora` y el mismo `nginx -t` + `reload`.
+
+| Cambio                        | Fecha      | Para qué                                                        |
+| ----------------------------- | ---------- | --------------------------------------------------------------- |
+| Videos (`.mp4`, 32 MB, 180 s) | 26/10/2026 | Subir videos a las obras: además, `sudo apt install -y ffmpeg`. |
+
+### Cargar contenido con un script (una sola vez)
+
+Algunos cambios de contenido vienen en un script en lugar de cargarse a mano en el admin. Se corren **una sola vez**, después del deploy que los trae, porque pisan los campos que tocan:
+
+```bash
+cd /var/www/mora/current && pnpm content:client-answers
+pm2 reload mora          # obligatorio: la app guarda el contenido en caché en memoria
+```
+
+> **Por qué el `pm2 reload`:** cuando se guarda desde el admin, la app limpia su caché sola. Un script escribe directo en la base y la app no se entera: sin el reload, el sitio sigue mostrando el contenido viejo.
+
+| Script                   | Qué carga                                                                                 | Estado                 |
+| ------------------------ | ----------------------------------------------------------------------------------------- | ---------------------- |
+| `content:client-answers` | Respuestas del cuestionario del cliente (26/10/2026): `prisma/content/client-answers.ts`. | Aplicado el 26/10/2026 |
+
 ### Volver a la versión anterior
 
 ```bash
@@ -1598,7 +1647,7 @@ pm2 reload mora
 ## Anexo: cómo funciona por dentro
 
 ```
-Visitante ──https──▶ Nginx (443) ──┬─▶ /uploads/*.webp → disco (/var/www/mora/uploads)
+Visitante ──https──▶ Nginx (443) ──┬─▶ /uploads/*.webp|mp4 → disco (/var/www/mora/uploads)
                                    └─▶ todo lo demás → Next.js (127.0.0.1:3000, PM2) ──▶ PostgreSQL (localhost:5432)
                                                                                       └─▶ Resend (emails)
 ```
@@ -1687,7 +1736,8 @@ pm2 startOrReload "$REL/deploy/ecosystem.config.cjs" --update-env
 log "Chequeo de salud"
 ok=0
 for _ in $(seq 1 30); do
-  if curl -fsS "http://127.0.0.1:$PORT/healthz" >/dev/null; then ok=1; break; fi
+  # Quiet: the first tries run while the app is still starting (connection refused).
+  if curl -fs "http://127.0.0.1:$PORT/healthz" >/dev/null; then ok=1; break; fi
   sleep 2
 done
 if [ "$ok" -ne 1 ]; then
@@ -1798,8 +1848,9 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/moramachadoconstrucciones.com/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
 
-    # Media uploads go one file per request (max 10 MB, see lib/media/process.ts).
-    client_max_body_size 12m;
+    # Media uploads go one file per request (images 10 MB, videos 30 MB: see
+    # lib/media/process.ts).
+    client_max_body_size 32m;
     server_tokens off;
 
     gzip on;
@@ -1810,10 +1861,11 @@ server {
     access_log /var/log/nginx/mora.access.log;
     error_log  /var/log/nginx/mora.error.log warn;
 
-    # Uploaded media straight from disk (UPLOAD_DIR). Only .webp variants exist;
-    # anything else under /uploads/ is a 404. These responses skip Next, so the
-    # security headers that matter for files are set here.
-    location ~ ^/uploads/(.+\.webp)$ {
+    # Uploaded media straight from disk (UPLOAD_DIR): .webp image variants and
+    # .mp4 videos (Nginx handles the byte ranges video players ask for). Anything
+    # else under /uploads/ is a 404. These responses skip Next, so the security
+    # headers that matter for files are set here.
+    location ~ ^/uploads/(.+\.(?:webp|mp4))$ {
         alias /var/www/mora/uploads/$1;
         access_log off;
         add_header Cache-Control "public, max-age=31536000, immutable" always;
@@ -1836,8 +1888,9 @@ server {
         # proxy.ts 404 rewrite as an external https fetch to itself and fails
         # (500). Absolute URLs come from SITE_URL, so the app doesn't need it.
         proxy_set_header X-Forwarded-Host $host;
-        proxy_read_timeout 60s;
-        proxy_send_timeout 60s;
+        # Video uploads are converted during the request (ffmpeg, up to ~2 min).
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
     }
 }
 ```
@@ -1923,6 +1976,14 @@ MAIL_FROM="Web Mora Machado <no-reply@moramachadoconstrucciones.com>"
 MAIL_TO_DEFAULT="info@moramachadoconstrucciones.com"
 # "true" → also send an acknowledgement to the person who wrote (if they left an email).
 LEAD_CONFIRMATION_EMAIL="false"
+# Leads older than this are deleted by `pnpm db:cleanup` (privacy policy: 2 years).
+LEAD_RETENTION_DAYS="730"
+
+# ── Video uploads ─────────────────────────────────────────
+# ffmpeg/ffprobe convert uploaded videos to H.264 MP4 (apt install ffmpeg).
+# Only needed if they are not on the PATH.
+FFMPEG_PATH=""
+FFPROBE_PATH=""
 
 # ── Optional: Cloudflare Turnstile on the contact form ────
 TURNSTILE_SITE_KEY=""
